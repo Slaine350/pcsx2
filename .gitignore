@@ -99,3 +99,4 @@ oprofile_data/
 CMakeSettings.json
 /ci-artifacts/
 /out/
+bin/pcsx2-qt

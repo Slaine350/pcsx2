@@ -323,7 +323,7 @@ void V_Core::FinishDMAwrite()
 			// understanding would trigger the interrupt early causing it to switch buffers again immediately
 			// and an interrupt never fires again, leaving the voices looping the same samples forever.
 
-			if (Cores[i].IRQEnable && (Cores[i].IRQA > start || Cores[i].IRQA <= TDA))
+			if (Cores[i].IRQEnable && (Cores[i].IRQA >= TSA || Cores[i].IRQA < TDA))
 			{
 				//ConLog("DMAwrite Core %d: IRQ Called (IRQ passed). IRQA = %x Cycles = %d\n", i, Cores[i].IRQA, Cycles );
 				SetIrqCallDMA(i);
@@ -341,7 +341,7 @@ void V_Core::FinishDMAwrite()
 		// Important: Test both core IRQ settings for either DMA!
 		for (int i = 0; i < 2; i++)
 		{
-			if (Cores[i].IRQEnable && (Cores[i].IRQA > ActiveTSA && Cores[i].IRQA <= TDA))
+			if (Cores[i].IRQEnable && (Cores[i].IRQA >= TSA) && (Cores[i].IRQA < TDA))
 			{
 				//ConLog("DMAwrite Core %d: IRQ Called (IRQ passed). IRQA = %x Cycles = %d\n", i, Cores[i].IRQA, Cycles );
 				SetIrqCallDMA(i);
@@ -415,7 +415,7 @@ void V_Core::FinishDMAread()
 
 		for (int i = 0; i < 2; i++)
 		{
-			if (Cores[i].IRQEnable && (Cores[i].IRQA > start || Cores[i].IRQA <= TDA))
+			if (Cores[i].IRQEnable && (Cores[i].IRQA >= TSA || Cores[i].IRQA < TDA))
 			{
 				SetIrqCallDMA(i);
 			}
@@ -433,7 +433,7 @@ void V_Core::FinishDMAread()
 
 		for (int i = 0; i < 2; i++)
 		{
-			if (Cores[i].IRQEnable && (Cores[i].IRQA > ActiveTSA && Cores[i].IRQA <= TDA))
+			if (Cores[i].IRQEnable && (Cores[i].IRQA >= TSA) && (Cores[i].IRQA < TDA))
 			{
 				SetIrqCallDMA(i);
 			}
