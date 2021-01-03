@@ -15,6 +15,7 @@
 
 #include "PrecompiledHeader.h"
 #include "AsyncFileReader.h"
+#include "PathUtils.h"
 
 // The aio module has been reported to cause issues with FreeBSD 10.3, so let's
 // disable it for 10.3 and earlier and hope FreeBSD 11 and onwards is fine.
@@ -128,5 +129,5 @@ void FlatFileReader::Close(void)
 
 uint FlatFileReader::GetBlockCount(void) const
 {
-	return (int)(Path::GetFileSize(m_filename) / m_blocksize);
+	return (int)(Path::GetFileSize(static_cast<std::string>(m_filename)) / m_blocksize);
 }

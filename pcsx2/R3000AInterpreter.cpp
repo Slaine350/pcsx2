@@ -16,8 +16,7 @@
 
 #include "PrecompiledHeader.h"
 #include "IopCommon.h"
-#include "Config.h"
-#include "gui/AppCoreThread.h"
+#include "gui/App.h" // For host irx injection hack
 
 #include "R5900OpcodeTables.h"
 #include "DebugTools/Breakpoints.h"
@@ -224,8 +223,8 @@ static __fi void execI()
 #endif
 
 	// Inject IRX hack
-	if (psxRegs.pc == 0x1630 && EmuConfig.CurrentIRX.length() > 3) {
-		if (iopMemRead32(0x20018) == 0x1F) {
+	if (psxRegs.pc == 0x1630 && g_Conf->CurrentIRX.size() > 3) {
+			if (iopMemRead32(0x20018) == 0x1F) {
 			// FIXME do I need to increase the module count (0x1F -> 0x20)
 			iopMemWrite32(0x20094, 0xbffc0000);
 		}

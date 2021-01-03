@@ -20,8 +20,7 @@
 #include <fstream>
 
 #include "DEV9/DEV9.h"
-#include "DEV9/Config.h"
-#include "Config.h"
+#include "gui/AppConfig.h"
 
 #include "ws2tcpip.h"
 
@@ -38,8 +37,8 @@ bool FileExists(std::wstring szPath)
 
 void SaveConf()
 {
-	const std::wstring file(EmuFolders::Settings.Combine(wxString("DEV9.cfg")).GetFullPath());
-	DeleteFile(file.c_str());
+	const std::string file(GetSettingsFolder() / "DEV9.cfg");
+	DeleteFileA(file.c_str());
 
 	//Create file with UT16 BOM to allow PrivateProfile to save unicode data
 	int bom = 0xFEFF;
@@ -76,25 +75,19 @@ void SaveConf()
 	WritePrivateProfileString(L"DEV9", L"DNS2", addrBuff, file.c_str());
 	WritePrivateProfileInt(L"DEV9", L"AutoDNS2", config.AutoDNS2, file.c_str());
 
-	WritePrivateProfileInt(L"DEV9", L"EthLogDNS", config.EthLogDNS, file.c_str());
 
 	WritePrivateProfileString(L"DEV9", L"Hdd", config.Hdd, file.c_str());
 	WritePrivateProfileInt(L"DEV9", L"HddSize", config.HddSize, file.c_str());
 
 	WritePrivateProfileInt(L"DEV9", L"ethEnable", config.ethEnable, file.c_str());
 	WritePrivateProfileInt(L"DEV9", L"hddEnable", config.hddEnable, file.c_str());
-
-	SaveDnsHosts();
 }
 
 void LoadConf()
 {
-	const std::wstring file(EmuFolders::Settings.Combine(wxString("DEV9.cfg")).GetFullPath());
+	const std::string file(GetSettingsFolder() / "DEV9.cfg");
 	if (FileExists(file.c_str()) == false)
-	{
-		LoadDnsHosts();
 		return;
-	}
 
 	wchar_t addrBuff[INET_ADDRSTRLEN] = {0};
 	wchar_t wEth[sizeof(config.Eth)] = {0};
@@ -124,13 +117,10 @@ void LoadConf()
 	InetPton(AF_INET, addrBuff, &config.DNS2);
 	config.AutoDNS2 = GetPrivateProfileInt(L"DEV9", L"AutoDNS2", config.AutoDNS2, file.c_str());
 
-	config.EthLogDNS = GetPrivateProfileInt(L"DEV9", L"EthLogDNS", config.EthLogDNS, file.c_str());
 
 	GetPrivateProfileString(L"DEV9", L"Hdd", HDD_DEF, config.Hdd, sizeof(config.Hdd), file.c_str());
 	config.HddSize = GetPrivateProfileInt(L"DEV9", L"HddSize", config.HddSize, file.c_str());
 
 	config.ethEnable = GetPrivateProfileInt(L"DEV9", L"ethEnable", config.ethEnable, file.c_str());
 	config.hddEnable = GetPrivateProfileInt(L"DEV9", L"hddEnable", config.hddEnable, file.c_str());
-
-	LoadDnsHosts();
 }

@@ -18,7 +18,6 @@
 #include "MainFrame.h"
 #include "GSFrame.h"
 #include "GS.h"
-#include "Host.h"
 #include "AppSaveStates.h"
 #include "AppGameDatabase.h"
 #include "AppAccelerators.h"
@@ -42,7 +41,6 @@
 #endif
 
 #include "common/IniInterface.h"
-#include "common/StringUtil.h"
 #include "common/AppTrait.h"
 
 #include <wx/stdpaths.h>
@@ -204,9 +202,9 @@ extern int TranslateVKToWXK( u32 keysym );
 extern int TranslateGDKtoWXK( u32 keysym );
 #endif
 
-void Pcsx2App::PadKeyDispatch(const HostKeyEvent& ev)
+void Pcsx2App::PadKeyDispatch( const keyEvent& ev )
 {
-	m_kevt.SetEventType( ( ev.type == HostKeyEvent::Type::KeyPressed ) ? wxEVT_KEY_DOWN : wxEVT_KEY_UP );
+	m_kevt.SetEventType( ( ev.evt == KEYPRESS ) ? wxEVT_KEY_DOWN : wxEVT_KEY_UP );
 
 //returns 0 for normal keys and a WXK_* value for special keys
 #ifdef __WXMSW__
@@ -347,7 +345,7 @@ class Pcsx2StandardPaths : public wxStandardPaths
 public:
 	wxString GetResourcesDir() const
 	{
-		return Path::Combine( GetDataDir(), L"Langs" );
+		return ( GetDataDir().ToStdString() / "Langs" );
 	}
 
 #ifdef __POSIX__
@@ -361,18 +359,18 @@ public:
 		// Note: GetUserLocalDataDir() on linux return $HOME/.pcsx2 unfortunately it does not follow the XDG standard
 		// So we re-implement it, to follow the standard.
 		wxDirName user_local_dir;
-		wxDirName default_config_dir = (wxDirName)Path::Combine( L".config", pxGetAppName() );
+		wxDirName default_config_dir = (wxDirName)( ".config" / pxGetAppName().ToStdString() );
 		wxString xdg_home_value;
 		if( wxGetEnv(L"XDG_CONFIG_HOME", &xdg_home_value) ) {
 			if ( xdg_home_value.IsEmpty() ) {
 				// variable exist but it is empty. So use the default value
-				user_local_dir = (wxDirName)Path::Combine( GetUserConfigDir() , default_config_dir);
+				user_local_dir = (wxDirName)( GetUserConfigDir().ToStdString() / default_config_dir.ToString().ToStdString() );
 			} else {
-				user_local_dir = (wxDirName)Path::Combine( xdg_home_value, pxGetAppName());
+				user_local_dir = (wxDirName)( xdg_home_value.ToStdString() / pxGetAppName().ToStdString());
 			}
 		} else {
 			// variable do not exist
-			user_local_dir = (wxDirName)Path::Combine( GetUserConfigDir() , default_config_dir);
+			user_local_dir = (wxDirName)( GetUserConfigDir().ToStdString() / default_config_dir.ToString().ToStdString() );
 		}
 
 		cache_dir = user_local_dir.ToString();
@@ -460,21 +458,10 @@ void Pcsx2App::LogicalVsync()
 
 	FpsManager.DoFrame();
 
-	if (EmuConfig.GS.FMVAspectRatioSwitch != FMVAspectRatioSwitchType::Off) {
+	if (g_Conf->GSWindow.FMVAspectRatioSwitch != FMV_AspectRatio_Switch_Off) {
 		if (EnableFMV) {
 			DevCon.Warning("FMV on");
-
-			switch (EmuConfig.GS.FMVAspectRatioSwitch)
-			{
-			case FMVAspectRatioSwitchType::R4_3:
-				EmuConfig.CurrentAspectRatio = AspectRatioType::R4_3;
-				break;
-			case FMVAspectRatioSwitchType::R16_9:
-				EmuConfig.CurrentAspectRatio = AspectRatioType::R16_9;
-				break;
-			default:
-				break;
-			}
+			GSSetFMVSwitch(true);
 			EnableFMV = false;
 		}
 
@@ -482,7 +469,7 @@ void Pcsx2App::LogicalVsync()
 			int diff = cpuRegs.cycle - eecount_on_last_vdec;
 			if (diff > 60000000 ) {
 				DevCon.Warning("FMV off");
-				EmuConfig.CurrentAspectRatio = EmuConfig.GS.AspectRatio;
+				GSSetFMVSwitch(false);
 				FMVstarted = false;
 			}
 		}
@@ -491,7 +478,7 @@ void Pcsx2App::LogicalVsync()
 	if( (wxGetApp().GetGsFramePtr() != NULL) )
 		PADupdate(0);
 
-	while( const HostKeyEvent* ev = PADkeyEvent() )
+	while( const keyEvent* ev = PADkeyEvent() )
 	{
 		if( ev->key == 0 ) break;
 
@@ -500,7 +487,7 @@ void Pcsx2App::LogicalVsync()
 		// sucked and we had multiple components battling for input processing. I managed to make
 		// most of them go away during the plugin merge but GS still needs to process the inputs,
 		// we might want to move all the input handling in a frontend-specific file in the future -- govanify
-		GSkeyEvent(*ev);
+		GSkeyEvent((GSKeyEventData*)ev);
 		PadKeyDispatch( *ev );
 	}
 }
@@ -542,7 +529,7 @@ void Pcsx2App::HandleEvent(wxEvtHandler* handler, wxEventFunction func, wxEvent&
 				// When the GSFrame CoreThread is paused, so is the logical VSync
 				// Meaning that we have to grab the user-input through here to potentially
 				// resume emulation.
-				if (const HostKeyEvent* ev = PADkeyEvent() )
+				if (const keyEvent* ev = PADkeyEvent() )
 				{
 					if( ev->key != 0 )
 					{
@@ -729,11 +716,15 @@ void AppApplySettings( const AppConfig* oldconf )
 	// Ensure existence of necessary documents folders.
 	// Other parts of PCSX2 rely on them.
 
-	g_Conf->Folders.MemoryCards.Mkdir();
-	g_Conf->Folders.Savestates.Mkdir();
-	g_Conf->Folders.Snapshots.Mkdir();
-	g_Conf->Folders.Cheats.Mkdir();
-	g_Conf->Folders.CheatsWS.Mkdir();
+	fs::create_directories(g_Conf->Folders.MemoryCards);
+	fs::create_directories(g_Conf->Folders.Savestates);
+	fs::create_directories(g_Conf->Folders.Snapshots);
+	fs::create_directories(g_Conf->Folders.Cheats);
+	fs::create_directories(g_Conf->Folders.CheatsWS);
+	fs::create_directories(g_Conf->Folders.Langs);
+
+
+	g_Conf->EmuOptions.BiosFilename = g_Conf->FullpathToBios();
 
 	RelocateLogfile();
 
@@ -747,7 +738,7 @@ void AppApplySettings( const AppConfig* oldconf )
 	// Memcards generally compress very well via NTFS compression.
 
 	#ifdef __WXMSW__
-	NTFS_CompressFile( g_Conf->Folders.MemoryCards.ToString(), g_Conf->EmuOptions.McdCompressNTFS );
+	NTFS_CompressFile( g_Conf->Folders.MemoryCards.string(), g_Conf->McdCompressNTFS );
 	#endif
 	sApp.DispatchEvent( AppStatus_SettingsApplied );
 
@@ -1015,8 +1006,7 @@ protected:
 		// This function below gets called again from AppCoreThread.cpp and will pass the current ISO regardless if we
 		// are starting an ELF. In terms of symbol loading this doesn't matter because AppCoreThread.cpp doesn't clear the symbol map
 		// and we _only_ read symbols if the map is empty
-		CDVDsys_SetFile(CDVD_SourceType::Disc, StringUtil::wxStringToUTF8String(g_Conf->Folders.RunDisc) );
-		CDVDsys_SetFile(CDVD_SourceType::Iso, StringUtil::wxStringToUTF8String(m_UseELFOverride ? m_elf_override : g_Conf->CurrentIso) );
+		CDVDsys_SetFile(CDVD_SourceType::Iso, m_UseELFOverride ? m_elf_override : g_Conf->CurrentIso );
 		if( m_UseCDVDsrc )
 			CDVDsys_ChangeSource( m_cdvdsrc_type );
 		else if( CDVD == NULL )
@@ -1041,7 +1031,7 @@ void Pcsx2App::SysExecute()
 // sources.
 void Pcsx2App::SysExecute( CDVD_SourceType cdvdsrc, const wxString& elf_override )
 {
-	SysExecutorThread.PostEvent( new SysExecEvent_Execute(cdvdsrc, elf_override.ToStdString()) );
+	SysExecutorThread.PostEvent( new SysExecEvent_Execute(cdvdsrc, elf_override) );
 #ifndef DISABLE_RECORDING
 	if (g_Conf->EmuOptions.EnableRecordingTools)
 	{
@@ -1079,7 +1069,11 @@ void SysUpdateIsoSrcFile( const wxString& newIsoFile )
 
 void SysUpdateDiscSrcDrive( const wxString& newDiscDrive )
 {
-	g_Conf->Folders.RunDisc = newDiscDrive;
+#if defined(_WIN32)
+	g_Conf->Folders.RunDisc = newDiscDrive.ToStdString();
+#else
+	g_Conf->Folders.RunDisc = newDiscDrive.ToStdString();
+#endif
 	AppSaveSettings();
 	sMainFrame.UpdateCdvdSrcSelection();
 }
@@ -1110,6 +1104,16 @@ MainEmuFrame* GetMainFramePtr()
 SysMainMemory& GetVmMemory()
 {
 	return wxGetApp().GetVmReserve();
+}
+
+SysCoreThread& GetCoreThread()
+{
+	return CoreThread;
+}
+
+SysMtgsThread& GetMTGS()
+{
+	return mtgsThread;
 }
 
 SysCpuProviderPack& GetCpuProviders()

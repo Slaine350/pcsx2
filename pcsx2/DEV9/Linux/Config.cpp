@@ -19,8 +19,7 @@
 #include <arpa/inet.h>
 
 #include "DEV9/DEV9.h"
-#include "DEV9/Config.h"
-#include "Config.h"
+#include "gui/AppConfig.h"
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -32,6 +31,7 @@
 
 void SaveConf()
 {
+
 	xmlDocPtr doc = NULL; /* document pointer */
 	xmlNodePtr root_node = NULL;
 	char buff[256];
@@ -90,10 +90,6 @@ void SaveConf()
 	xmlNewChild(root_node, NULL, BAD_CAST "AutoDNS2",
 				BAD_CAST buff);
 
-	sprintf(buff, "%d", config.EthLogDNS);
-	xmlNewChild(root_node, NULL, BAD_CAST "EthLogDNS",
-				BAD_CAST buff);
-
 	xmlNewChild(root_node, NULL, BAD_CAST "Hdd",
 				BAD_CAST config.Hdd);
 
@@ -113,7 +109,7 @@ void SaveConf()
      */
 
 
-	const std::string file(EmuFolders::Settings.Combine(wxString("DEV9.cfg")).GetFullPath());
+	const std::string file(GetSettingsFolder() / "DEV9.cfg");
 
 	Console.WriteLn("DEV9: CONF: %s", file.c_str());
 
@@ -128,13 +124,12 @@ void SaveConf()
      *have been allocated by the parser.
      */
 	xmlCleanupParser();
-
-	SaveDnsHosts();
 }
 
 void LoadConf()
 {
-	const std::string file(EmuFolders::Settings.Combine(wxString("DEV9.cfg")).GetFullPath());
+
+	const std::string file(GetSettingsFolder() / "DEV9.cfg");
 	if (-1 == access(file.c_str(), F_OK))
 		return;
 
@@ -205,10 +200,6 @@ void LoadConf()
 			{
 				config.AutoDNS2 = atoi((const char*)xmlNodeGetContent(cur_node));
 			}
-			if (0 == strcmp((const char*)cur_node->name, "EthLogDNS"))
-			{
-				config.EthLogDNS = atoi((const char*)xmlNodeGetContent(cur_node));
-			}
 			if (0 == strcmp((const char*)cur_node->name, "Hdd"))
 			{
 				strcpy(config.Hdd, (const char*)xmlNodeGetContent(cur_node));
@@ -231,6 +222,4 @@ void LoadConf()
 	//    free(configFile);
 	xmlFreeDoc(doc);
 	xmlCleanupParser();
-
-	LoadDnsHosts();
 }

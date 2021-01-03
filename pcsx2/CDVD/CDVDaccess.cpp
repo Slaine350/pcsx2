@@ -33,9 +33,8 @@
 #include "IsoFS/IsoFSCDVD.h"
 #include "CDVDisoReader.h"
 
-#include "common/StringUtil.h"
 #include "DebugTools/SymbolMap.h"
-#include "Config.h"
+#include "gui/AppConfig.h"
 
 CDVD_API* CDVD = NULL;
 
@@ -78,51 +77,45 @@ static void CheckNullCDVD()
 static int CheckDiskTypeFS(int baseType)
 {
 	IsoFSCDVD isofs;
+	IsoDirectory rootdir(isofs);
 	try
 	{
-		IsoDirectory rootdir(isofs);
+		IsoFile file(rootdir, L"SYSTEM.CNF;1");
 
-		try
+		int size = file.getLength();
+
+		std::unique_ptr<char[]> buffer(new char[file.getLength() + 1]);
+		file.read(buffer.get(), size);
+		buffer[size] = '\0';
+
+		char* pos = strstr(buffer.get(), "BOOT2");
+		if (pos == NULL)
 		{
-			IsoFile file(rootdir, L"SYSTEM.CNF;1");
-
-			const int size = file.getLength();
-			const std::unique_ptr<char[]> buffer = std::make_unique<char[]>(size + 1);
-			file.read(buffer.get(), size);
-			buffer[size] = '\0';
-
-			char* pos = strstr(buffer.get(), "BOOT2");
+			pos = strstr(buffer.get(), "BOOT");
 			if (pos == NULL)
-			{
-				pos = strstr(buffer.get(), "BOOT");
-				if (pos == NULL)
-					return CDVD_TYPE_ILLEGAL;
-				return CDVD_TYPE_PSCD;
-			}
-
-			return (baseType == CDVD_TYPE_DETCTCD) ? CDVD_TYPE_PS2CD : CDVD_TYPE_PS2DVD;
-		}
-		catch (Exception::FileNotFound&)
-		{
-		}
-
-		try
-		{
-			IsoFile file(rootdir, L"PSX.EXE;1");
+				return CDVD_TYPE_ILLEGAL;
 			return CDVD_TYPE_PSCD;
 		}
-		catch (Exception::FileNotFound&)
-		{
-		}
 
-		try
-		{
-			IsoFile file(rootdir, L"VIDEO_TS/VIDEO_TS.IFO;1");
-			return CDVD_TYPE_DVDV;
-		}
-		catch (Exception::FileNotFound&)
-		{
-		}
+		return (baseType == CDVD_TYPE_DETCTCD) ? CDVD_TYPE_PS2CD : CDVD_TYPE_PS2DVD;
+	}
+	catch (Exception::FileNotFound&)
+	{
+	}
+
+	try
+	{
+		IsoFile file(rootdir, L"PSX.EXE;1");
+		return CDVD_TYPE_PSCD;
+	}
+	catch (Exception::FileNotFound&)
+	{
+	}
+
+	try
+	{
+		IsoFile file(rootdir, L"VIDEO_TS/VIDEO_TS.IFO;1");
+		return CDVD_TYPE_DVDV;
 	}
 	catch (Exception::FileNotFound&)
 	{
@@ -294,29 +287,30 @@ static void DetectDiskType()
 	diskTypeCached = FindDiskType(mType);
 }
 
-static std::string m_SourceFilename[3];
+static wxString m_SourceFilename[3];
 static CDVD_SourceType m_CurrentSourceType = CDVD_SourceType::NoDisc;
 
-void CDVDsys_SetFile(CDVD_SourceType srctype, std::string newfile)
+void CDVDsys_SetFile(CDVD_SourceType srctype, const wxString& newfile)
 {
-	m_SourceFilename[enum_cast(srctype)] = std::move(newfile);
+	m_SourceFilename[enum_cast(srctype)] = newfile;
 
 	// look for symbol file
 	if (symbolMap.IsEmpty())
 	{
-		std::string symName;
-		std::string::size_type n = m_SourceFilename[enum_cast(srctype)].rfind('.');
-		if (n == std::string::npos)
-			symName = m_SourceFilename[enum_cast(srctype)] + ".sym";
+		wxString symName;
+		int n = newfile.Last('.');
+		if (n == wxNOT_FOUND)
+			symName = newfile + L".sym";
 		else
-			symName = m_SourceFilename[enum_cast(srctype)].substr(0, n) + ".sym";
+			symName = newfile.substr(0, n) + L".sym";
 
-		symbolMap.LoadNocashSym(symName.c_str());
+		wxCharBuffer buf = symName.ToUTF8();
+		symbolMap.LoadNocashSym(buf);
 		symbolMap.UpdateActiveSymbols();
 	}
 }
 
-const std::string& CDVDsys_GetFile(CDVD_SourceType srctype)
+const wxString& CDVDsys_GetFile(CDVD_SourceType srctype)
 {
 	return m_SourceFilename[enum_cast(srctype)];
 }
@@ -364,7 +358,10 @@ bool DoCDVDopen()
 	//TODO_CDVD check if ISO and Disc use UTF8
 
 	auto CurrentSourceType = enum_cast(m_CurrentSourceType);
-	int ret = CDVD->open(!m_SourceFilename[CurrentSourceType].empty() ? m_SourceFilename[CurrentSourceType].c_str() : nullptr);
+	int ret = CDVD->open(!m_SourceFilename[CurrentSourceType].IsEmpty() ?
+							 static_cast<const char*>(m_SourceFilename[CurrentSourceType].ToUTF8()) :
+							 (char*)NULL);
+
 	if (ret == -1)
 		return false; // error! (handled by caller)
 
@@ -385,10 +382,10 @@ bool DoCDVDopen()
 	else if (somepick.IsEmpty())
 		somepick = L"Untitled";
 
-	if (EmuConfig.CurrentBlockdump.empty())
-		EmuConfig.CurrentBlockdump = StringUtil::wxStringToUTF8String(wxGetCwd());
+	if (g_Conf->CurrentBlockdump.empty())
+			g_Conf->CurrentBlockdump = wxGetCwd();
 
-	wxString temp(Path::Combine(StringUtil::UTF8StringToWxString(EmuConfig.CurrentBlockdump), somepick));
+	wxString temp(g_Conf->CurrentBlockdump / somepick.ToStdString());
 
 #ifdef ENABLE_TIMESTAMPS
 	wxDateTime curtime(wxDateTime::GetTimeNow());

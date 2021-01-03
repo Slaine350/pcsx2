@@ -18,13 +18,13 @@
 #include "configuration.h"
 #include "shared/inifile_usb.h"
 #include "platcompat.h"
-#include "Config.h"
+#include "gui/AppConfig.h"
 #include <map>
 #include <vector>
 
 std::map<std::pair<int, std::string>, std::string> changedAPIs;
 std::map<std::pair<int, std::string>, int> changedSubtype;
-wxString iniFileUSB(L"USB.ini");
+std::string iniFile("USB.ini");
 static TSTDSTRING usb_path;
 TSTDSTRING IniPath;  // default path, just in case
 TSTDSTRING LogDir;
@@ -36,9 +36,9 @@ void USBsetSettingsDir()
 	if(!USBpathSet)
 	{
 #ifdef _WIN32
-		IniPath = EmuFolders::Settings.Combine( iniFileUSB ).GetFullPath(); // default path, just in case
+		IniPath = fs::path((GetSettingsFolder() / fs::path(iniFile))).wstring(); // default path, just in case
 #else
-		IniPath = std::string(EmuFolders::Settings.Combine( iniFileUSB ).GetFullPath()); // default path, just in case
+		IniPath = (GetSettingsFolder() / fs::path(iniFile)); // default path, just in case
 #endif
 		USBpathSet = true;
 	}

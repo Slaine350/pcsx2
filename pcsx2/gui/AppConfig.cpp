@@ -17,9 +17,9 @@
 #include "App.h"
 #include "MainFrame.h"
 
+#include "MemoryCardFile.h"
+
 #include "common/IniInterface.h"
-#include "common/SettingsWrapper.h"
-#include "wxSettingsInterface.h"
 
 #include <wx/stdpaths.h>
 #include "DebugTools/Debug.h"
@@ -150,7 +150,7 @@ namespace PathDefs
 			// Move all user data file into central configuration directory (XDG_CONFIG_DIR)
 			case DocsFolder_User:	return GetUserLocalDataDir();
 #else
-			case DocsFolder_User:	return (wxDirName)Path::Combine( wxStandardPaths::Get().GetDocumentsDir(), pxGetAppName() );
+			case DocsFolder_User:	return (wxDirName)( wxStandardPaths::Get().GetDocumentsDir() / pxGetAppName() );
 #endif
 			case DocsFolder_Custom: return CustomDocumentsFolder;
 
@@ -256,88 +256,6 @@ namespace PathDefs
 	}
 };
 
-
-// --------------------------------------------------------------------------------------
-//  Default Filenames
-// --------------------------------------------------------------------------------------
-namespace FilenameDefs
-{
-wxFileName GetUiConfig()
-{
-	return pxGetAppName() + L"_ui.ini";
-}
-
-wxFileName GetUiKeysConfig()
-{
-	return pxGetAppName() + L"_keys.ini";
-}
-
-wxFileName GetVmConfig()
-{
-	return pxGetAppName() + L"_vm.ini";
-}
-
-wxFileName GetUsermodeConfig()
-{
-	return wxFileName(L"usermode.ini");
-}
-
-const wxFileName& Memcard(uint port, uint slot)
-{
-	static const wxFileName retval[2][4] =
-	{
-		{
-			wxFileName(L"Mcd001.ps2"),
-			wxFileName(L"Mcd003.ps2"),
-			wxFileName(L"Mcd005.ps2"),
-			wxFileName(L"Mcd007.ps2"),
-		},
-		{
-			wxFileName(L"Mcd002.ps2"),
-			wxFileName(L"Mcd004.ps2"),
-			wxFileName(L"Mcd006.ps2"),
-			wxFileName(L"Mcd008.ps2"),
-		}
-	};
-
-	IndexBoundsAssumeDev(L"FilenameDefs::Memcard", port, 2);
-	IndexBoundsAssumeDev(L"FilenameDefs::Memcard", slot, 4);
-
-	return retval[port][slot];
-}
-};
-
-static wxDirName GetResolvedFolder(FoldersEnum_t id)
-{
-	return g_Conf->Folders.IsDefault(id) ? PathDefs::Get(id) : g_Conf->Folders[id];
-}
-
-static wxDirName GetSettingsFolder()
-{
-	if (wxGetApp().Overrides.SettingsFolder.IsOk())
-		return wxGetApp().Overrides.SettingsFolder;
-
-	return UseDefaultSettingsFolder ? PathDefs::GetSettings() : SettingsFolder;
-}
-
-wxString GetVmSettingsFilename()
-{
-	wxFileName fname(wxGetApp().Overrides.VmSettingsFile.IsOk() ? wxGetApp().Overrides.VmSettingsFile : FilenameDefs::GetVmConfig());
-	return GetSettingsFolder().Combine(fname).GetFullPath();
-}
-
-wxString GetUiSettingsFilename()
-{
-	wxFileName fname(FilenameDefs::GetUiConfig());
-	return GetSettingsFolder().Combine(fname).GetFullPath();
-}
-
-wxString GetUiKeysFilename()
-{
-	wxFileName fname(FilenameDefs::GetUiKeysConfig());
-	return GetSettingsFolder().Combine(fname).GetFullPath();
-}
-
 wxDirName& AppConfig::FolderOptions::operator[]( FoldersEnum_t folderidx )
 {
 	switch( folderidx )
@@ -392,43 +310,36 @@ void AppConfig::FolderOptions::Set( FoldersEnum_t folderidx, const wxString& src
 		case FolderId_Settings:
 			SettingsFolder = src;
 			UseDefaultSettingsFolder = useDefault;
-			EmuFolders::Settings = GetSettingsFolder();
 		break;
 
 		case FolderId_Bios:
 			Bios = src;
 			UseDefaultBios = useDefault;
-			EmuFolders::Bios = GetResolvedFolder(FolderId_Bios);
 		break;
 
 		case FolderId_Snapshots:
 			Snapshots = src;
 			UseDefaultSnapshots = useDefault;
-			EmuFolders::Snapshots = GetResolvedFolder(FolderId_Snapshots);
 		break;
 
 		case FolderId_Savestates:
 			Savestates = src;
 			UseDefaultSavestates = useDefault;
-			EmuFolders::Savestates = GetResolvedFolder(FolderId_Savestates);
 		break;
 
 		case FolderId_MemoryCards:
 			MemoryCards = src;
 			UseDefaultMemoryCards = useDefault;
-			EmuFolders::MemoryCards = GetResolvedFolder(FolderId_MemoryCards);
 		break;
 
 		case FolderId_Logs:
 			Logs = src;
 			UseDefaultLogs = useDefault;
-			EmuFolders::Logs = GetResolvedFolder(FolderId_Logs);
 		break;
 
 		case FolderId_Langs:
 			Langs = src;
 			UseDefaultLangs = useDefault;
-			EmuFolders::Langs = GetResolvedFolder(FolderId_Langs);
 		break;
 
 		case FolderId_Documents:
@@ -438,17 +349,118 @@ void AppConfig::FolderOptions::Set( FoldersEnum_t folderidx, const wxString& src
 		case FolderId_Cheats:
 			Cheats = src;
 			UseDefaultCheats = useDefault;
-			EmuFolders::Cheats = GetResolvedFolder(FolderId_Cheats);
 		break;
 
 		case FolderId_CheatsWS:
 			CheatsWS = src;
 			UseDefaultCheatsWS = useDefault;
-			EmuFolders::CheatsWS = GetResolvedFolder(FolderId_CheatsWS);
 		break;
 
 		jNO_DEFAULT
 	}
+}
+
+// --------------------------------------------------------------------------------------
+//  Default Filenames
+// --------------------------------------------------------------------------------------
+namespace FilenameDefs
+{
+	wxFileName GetUiConfig()
+	{
+		return pxGetAppName() + L"_ui.ini";
+	}
+
+	wxFileName GetUiKeysConfig()
+	{
+		return pxGetAppName() + L"_keys.ini";
+	}
+
+	wxFileName GetVmConfig()
+	{
+		return pxGetAppName() + L"_vm.ini";
+	}
+
+	wxFileName GetUsermodeConfig()
+	{
+		return wxFileName( L"usermode.ini" );
+	}
+
+	const wxFileName& Memcard( uint port, uint slot )
+	{
+		static const wxFileName retval[2][4] =
+		{
+			{
+				wxFileName( L"Mcd001.ps2" ),
+				wxFileName( L"Mcd003.ps2" ),
+				wxFileName( L"Mcd005.ps2" ),
+				wxFileName( L"Mcd007.ps2" ),
+			},
+			{
+				wxFileName( L"Mcd002.ps2" ),
+				wxFileName( L"Mcd004.ps2" ),
+				wxFileName( L"Mcd006.ps2" ),
+				wxFileName( L"Mcd008.ps2" ),
+			}
+		};
+
+		IndexBoundsAssumeDev( L"FilenameDefs::Memcard", port, 2 );
+		IndexBoundsAssumeDev( L"FilenameDefs::Memcard", slot, 4 );
+
+		return retval[port][slot];
+	}
+};
+
+static wxDirName GetResolvedFolder(FoldersEnum_t id)
+{
+	return g_Conf->Folders.IsDefault(id) ? PathDefs::Get(id) : g_Conf->Folders[id];
+}
+
+wxDirName GetLogFolder()
+{
+	return GetResolvedFolder(FolderId_Logs);
+}
+
+wxDirName GetCheatsFolder()
+{
+	return GetResolvedFolder(FolderId_Cheats);
+}
+
+wxDirName GetCheatsWsFolder()
+{
+	return GetResolvedFolder(FolderId_CheatsWS);
+}
+
+wxDirName GetSettingsFolder()
+{
+	if( wxGetApp().Overrides.SettingsFolder.IsOk() )
+		return wxGetApp().Overrides.SettingsFolder;
+
+	return UseDefaultSettingsFolder ? PathDefs::GetSettings() : SettingsFolder;
+}
+
+wxString GetVmSettingsFilename()
+{
+	wxFileName fname( wxGetApp().Overrides.VmSettingsFile.IsOk() ? wxGetApp().Overrides.VmSettingsFile : FilenameDefs::GetVmConfig() );
+	return GetSettingsFolder().Combine( fname ).GetFullPath();
+}
+
+wxString GetUiSettingsFilename()
+{
+	wxFileName fname( FilenameDefs::GetUiConfig() );
+	return GetSettingsFolder().Combine( fname ).GetFullPath();
+}
+
+wxString GetUiKeysFilename()
+{
+	wxFileName fname( FilenameDefs::GetUiKeysConfig() );
+	return GetSettingsFolder().Combine( fname ).GetFullPath();
+}
+
+
+wxString AppConfig::FullpathToBios() const				{ return ( Folders.Bios / BaseFilenames.Bios ); }
+wxString AppConfig::FullpathToMcd( uint slot ) const
+{
+	return ( Folders.MemoryCards / Mcd[slot].Filename );
 }
 
 bool IsPortable()
@@ -470,6 +482,9 @@ AppConfig::AppConfig()
 	Toolbar_ImageSize	= 24;
 	Toolbar_ShowLabels	= true;
 
+	#ifdef __WXMSW__
+	McdCompressNTFS		= true;
+	#endif
 	EnableSpeedHacks	= true;
 	EnableGameFixes		= false;
 	EnableFastBoot		= true;
@@ -478,6 +493,18 @@ AppConfig::AppConfig()
 	PresetIndex			= 1;
 
 	CdvdSource			= CDVD_SourceType::Iso;
+
+	// To be moved to FileMemoryCard pluign (someday)
+	for( uint slot=0; slot<8; ++slot )
+	{
+		Mcd[slot].Enabled	= !FileMcd_IsMultitapSlot(slot);	// enables main 2 slots
+		Mcd[slot].Filename	= FileMcd_GetDefaultName( slot );
+
+		// Folder memory card is autodetected later.
+		Mcd[slot].Type = MemoryCardType::MemoryCard_File;
+	}
+
+	GzipIsoIndexTemplate = L"$(f).pindex.tmp";
 }
 
 // ------------------------------------------------------------------------
@@ -528,6 +555,30 @@ void App_SaveInstallSettings( wxConfigBase* ini )
 }
 
 // ------------------------------------------------------------------------
+void AppConfig::LoadSaveMemcards( IniInterface& ini )
+{
+	ScopedIniGroup path( ini, L"MemoryCards" );
+
+	for( uint slot=0; slot<2; ++slot )
+	{
+		ini.Entry( pxsFmt( L"Slot%u_Enable", slot+1 ),
+			Mcd[slot].Enabled, Mcd[slot].Enabled );
+		ini.Entry( pxsFmt( L"Slot%u_Filename", slot+1 ),
+			Mcd[slot].Filename, Mcd[slot].Filename );
+	}
+
+	for( uint slot=2; slot<8; ++slot )
+	{
+		int mtport = FileMcd_GetMtapPort(slot)+1;
+		int mtslot = FileMcd_GetMtapSlot(slot)+1;
+
+		ini.Entry( pxsFmt( L"Multitap%u_Slot%u_Enable", mtport, mtslot ),
+			Mcd[slot].Enabled, Mcd[slot].Enabled );
+		ini.Entry( pxsFmt( L"Multitap%u_Slot%u_Filename", mtport, mtslot ),
+			Mcd[slot].Filename, Mcd[slot].Filename );
+	}
+}
+
 void AppConfig::LoadSaveRootItems( IniInterface& ini )
 {
 	IniEntry( MainGuiPosition );
@@ -539,7 +590,7 @@ void AppConfig::LoadSaveRootItems( IniInterface& ini )
 	ini.EnumEntry( L"LanguageId", LanguageId, NULL, LanguageId );
 	IniEntry( LanguageCode );
 	IniEntry( RecentIsoCount );
-	ini.Entry(wxT("GzipIsoIndexTemplate"), EmuConfig.GzipIsoIndexTemplate, EmuConfig.GzipIsoIndexTemplate);
+	IniEntry( GzipIsoIndexTemplate );
 	IniEntry( Listbook_ImageSize );
 	IniEntry( Toolbar_ImageSize );
 	IniEntry( Toolbar_ShowLabels );
@@ -548,9 +599,9 @@ void AppConfig::LoadSaveRootItems( IniInterface& ini )
 	ini.Entry( L"CurrentIso", res, res, ini.IsLoading() || IsPortable() );
 	CurrentIso = res.GetFullPath();
 
-	ini.Entry(wxT("CurrentBlockdump"), EmuConfig.CurrentBlockdump, EmuConfig.CurrentBlockdump);
+	IniEntry( CurrentBlockdump );
 	IniEntry( CurrentELF );
-	ini.Entry(wxT("CurrentIRX"), EmuConfig.CurrentIRX, EmuConfig.CurrentIRX);
+	IniEntry( CurrentIRX );
 
 	IniEntry( EnableSpeedHacks );
 	IniEntry( EnableGameFixes );
@@ -559,33 +610,32 @@ void AppConfig::LoadSaveRootItems( IniInterface& ini )
 	IniEntry( EnablePresets );
 	IniEntry( PresetIndex );
 	IniEntry( AskOnBoot );
-
-	ini.EnumEntry( L"CdvdSource", CdvdSource, CDVD_SourceLabels, CdvdSource );
 	
 	#ifdef __WXMSW__
-	ini.Entry(wxT("McdCompressNTFS"), EmuOptions.McdCompressNTFS, EmuOptions.McdCompressNTFS);
+	IniEntry( McdCompressNTFS );
 	#endif
+
+	ini.EnumEntry( L"CdvdSource", CdvdSource, CDVD_SourceLabels, CdvdSource );
 }
 
 // ------------------------------------------------------------------------
-void AppConfig::LoadSave(IniInterface& ini, SettingsWrapper& wrap)
+void AppConfig::LoadSave( IniInterface& ini )
 {
-	// do all the wx stuff first so it doesn't screw with the wrapper's path
 	LoadSaveRootItems( ini );
-	ProgLogBox.LoadSave(ini, L"ProgramLog");
-	Folders.LoadSave(ini);
+	LoadSaveMemcards( ini );
 
-	GSWindow.LoadSave(ini);
+	// Process various sub-components:
+	ProgLogBox		.LoadSave( ini, L"ProgramLog" );
+
+	Folders			.LoadSave( ini );
+	BaseFilenames	.LoadSave( ini );
+	GSWindow		.LoadSave( ini );
+	Framerate		.LoadSave( ini );
 #ifndef DISABLE_RECORDING
 	inputRecording.loadSave(ini);
 #endif
-	AudioCapture.LoadSave(ini);
-	Templates.LoadSave(ini);
-
-	// Process various sub-components:
-	EmuOptions.LoadSaveMemcards(wrap);
-	EmuOptions.BaseFilenames.LoadSave(wrap);
-	EmuOptions.Framerate		.LoadSave(wrap);
+	AudioCapture.LoadSave( ini );
+	Templates		.LoadSave( ini );
 
 	ini.Flush();
 }
@@ -684,17 +734,26 @@ void AppConfig::FolderOptions::LoadSave( IniInterface& ini )
 
 		for( int i=0; i<FolderId_COUNT; ++i )
 			operator[]( (FoldersEnum_t)i ).Normalize();
-
-		EmuFolders::Settings = GetSettingsFolder();
-		EmuFolders::Bios = GetResolvedFolder(FolderId_Bios);
-		EmuFolders::Snapshots = GetResolvedFolder(FolderId_Snapshots);
-		EmuFolders::Savestates = GetResolvedFolder(FolderId_Savestates);
-		EmuFolders::MemoryCards = GetResolvedFolder(FolderId_MemoryCards);
-		EmuFolders::Logs = GetResolvedFolder(FolderId_Logs);
-		EmuFolders::Langs = GetResolvedFolder(FolderId_Langs);
-		EmuFolders::Cheats = GetResolvedFolder(FolderId_Cheats);
-		EmuFolders::CheatsWS = GetResolvedFolder(FolderId_CheatsWS);
 	}
+}
+
+// ------------------------------------------------------------------------
+void AppConfig::FilenameOptions::LoadSave( IniInterface& ini )
+{
+	ScopedIniGroup path( ini, L"Filenames" );
+
+	static const wxFileName pc( L"Please Configure" );
+
+	//when saving in portable mode, we just save the non-full-path filename
+ 	//  --> on load they'll be initialized with default (relative) paths (works for bios)
+	//note: this will break if converting from install to portable, and custom folders are used. We can live with that.
+	needRelativeName = ini.IsSaving() && IsPortable();
+
+	if( needRelativeName ) { 
+		wxFileName bios_filename = wxFileName( Bios.GetFullName() );
+		ini.Entry( L"BIOS", bios_filename, pc );
+	} else
+		ini.Entry( L"BIOS", Bios, pc );
 }
 
 // ------------------------------------------------------------------------
@@ -705,6 +764,13 @@ AppConfig::GSWindowOptions::GSWindowOptions()
 	AlwaysHideMouse			= false;
 	DisableResizeBorders	= false;
 	DisableScreenSaver		= true;
+
+	AspectRatio				= AspectRatio_4_3;
+	FMVAspectRatioSwitch	= FMV_AspectRatio_Switch_Off;
+	Zoom					= 100;
+	StretchY				= 100;
+	OffsetX					= 0;
+	OffsetY					= 0;
 
 	WindowSize				= wxSize( 640, 480 );
 	WindowPos				= wxDefaultPosition;
@@ -729,6 +795,9 @@ void AppConfig::GSWindowOptions::SanityCheck()
 	// move into view:
 	if( !wxGetDisplayArea().Contains( wxRect( WindowPos, wxSize( 48,48 ) ) ) )
 		WindowPos = wxDefaultPosition;
+
+	if( (uint)AspectRatio >= (uint)AspectRatio_MaxCount )
+		AspectRatio = AspectRatio_4_3;
 }
 
 void AppConfig::GSWindowOptions::LoadSave( IniInterface& ini )
@@ -758,9 +827,7 @@ void AppConfig::GSWindowOptions::LoadSave( IniInterface& ini )
 		NULL
 	};
 
-	ini.EnumEntry( L"AspectRatio", g_Conf->EmuOptions.GS.AspectRatio, AspectRatioNames, g_Conf->EmuOptions.GS.AspectRatio );
-	if (ini.IsLoading())
-		EmuConfig.CurrentAspectRatio = g_Conf->EmuOptions.GS.AspectRatio;
+	ini.EnumEntry( L"AspectRatio", AspectRatio, AspectRatioNames, AspectRatio );
 
 	static const wxChar* FMVAspectRatioSwitchNames[] =
 	{
@@ -770,9 +837,9 @@ void AppConfig::GSWindowOptions::LoadSave( IniInterface& ini )
 		// WARNING: array must be NULL terminated to compute it size
 		NULL
 	};
-	ini.EnumEntry(L"FMVAspectRatioSwitch", g_Conf->EmuOptions.GS.FMVAspectRatioSwitch, FMVAspectRatioSwitchNames, g_Conf->EmuOptions.GS.FMVAspectRatioSwitch);
+	ini.EnumEntry(L"FMVAspectRatioSwitch", FMVAspectRatioSwitch, FMVAspectRatioSwitchNames, FMVAspectRatioSwitch);
 
-	ini.Entry(wxT("Zoom"), g_Conf->EmuOptions.GS.Zoom, g_Conf->EmuOptions.GS.Zoom);
+	IniEntry( Zoom );
 
 	if( ini.IsLoading() ) SanityCheck();
 }
@@ -792,6 +859,28 @@ void AppConfig::InputRecordingOptions::loadSave(IniInterface& ini)
 	IniEntry(m_frame_advance_amount);
 }
 #endif
+
+// ----------------------------------------------------------------------------
+void AppConfig::FramerateOptions::SanityCheck()
+{
+	// Ensure Conformation of various options...
+
+	NominalScalar = std::clamp(NominalScalar, 0.05, 10.0);
+	TurboScalar = std::clamp(TurboScalar, 0.05, 10.0);
+	SlomoScalar = std::clamp(SlomoScalar, 0.05, 10.0);
+}
+
+void AppConfig::FramerateOptions::LoadSave( IniInterface& ini )
+{
+	ScopedIniGroup path( ini, L"Framerate" );
+
+	IniEntry( NominalScalar );
+	IniEntry( TurboScalar );
+	IniEntry( SlomoScalar );
+
+	IniEntry( SkipOnLimit );
+	IniEntry( SkipOnTurbo );
+}
 
 AppConfig::CaptureOptions::CaptureOptions()
 {
@@ -883,7 +972,7 @@ bool AppConfig::IsOkApplyPreset(int n, bool ignoreMTVU)
 
 	//Have some original and default values at hand to be used later.
 	Pcsx2Config::GSOptions        original_GS = EmuOptions.GS;
-	Pcsx2Config::FramerateOptions	  original_Framerate = EmuOptions.Framerate;
+	AppConfig::FramerateOptions	  original_Framerate = Framerate;
 	Pcsx2Config::SpeedhackOptions original_SpeedHacks = EmuOptions.Speedhacks;
 	AppConfig				default_AppConfig;
 	Pcsx2Config				default_Pcsx2Config;
@@ -905,9 +994,9 @@ bool AppConfig::IsOkApplyPreset(int n, bool ignoreMTVU)
 
 	//Force some settings as a (current) base for all presets.
 
-	EmuOptions.Framerate			= default_Pcsx2Config.Framerate;
-	EmuOptions.Framerate.SlomoScalar = original_Framerate.SlomoScalar;
-	EmuOptions.Framerate.TurboScalar = original_Framerate.TurboScalar;
+	Framerate			= default_AppConfig.Framerate;
+	Framerate.SlomoScalar = original_Framerate.SlomoScalar;
+	Framerate.TurboScalar = original_Framerate.TurboScalar;
 
 	EnableGameFixes		= false;
 
@@ -1129,10 +1218,8 @@ static void LoadUiSettings()
 	ConLog_LoadSaveSettings( loader );
 	SysTraceLog_LoadSaveSettings( loader );
 
-	wxSettingsInterface wxsi(&loader.GetConfig());
-	SettingsLoadWrapper wrapper(wxsi);
 	g_Conf = std::make_unique<AppConfig>();
-	g_Conf->LoadSave( loader, wrapper );
+	g_Conf->LoadSave( loader );
 
 	if( !wxFile::Exists( g_Conf->CurrentIso ) )
 	{
@@ -1148,11 +1235,9 @@ static void LoadVmSettings()
 	// are regulated by the PCSX2 UI.
 
 	std::unique_ptr<wxFileConfig> vmini( OpenFileConfig( GetVmSettingsFilename() ) );
-	wxSettingsInterface wxsi(vmini.get());
-	IniLoader vmloader(vmini.get());
-	SettingsLoadWrapper vmwrapper(wxsi);
-	g_Conf->EmuOptions.LoadSave( vmwrapper );
-	g_Conf->EmuOptions.GS.LimitScalar = g_Conf->EmuOptions.Framerate.NominalScalar;
+	IniLoader vmloader( vmini.get() );
+	g_Conf->EmuOptions.LoadSave( vmloader );
+	g_Conf->EmuOptions.GS.LimitScalar = g_Conf->Framerate.NominalScalar;
 
 	if (g_Conf->EnablePresets){
 		g_Conf->IsOkApplyPreset(g_Conf->PresetIndex, true);
@@ -1179,9 +1264,7 @@ static void SaveUiSettings()
 	sApp.GetRecentIsoManager().Add( g_Conf->CurrentIso );
 
 	AppIniSaver saver;
-	wxSettingsInterface wxsi(&saver.GetConfig());
-	SettingsSaveWrapper wrapper(wxsi);
-	g_Conf->LoadSave( saver, wrapper );
+	g_Conf->LoadSave( saver );
 	ConLog_LoadSaveSettings( saver );
 	SysTraceLog_LoadSaveSettings( saver );
 
@@ -1191,10 +1274,8 @@ static void SaveUiSettings()
 static void SaveVmSettings()
 {
 	std::unique_ptr<wxFileConfig> vmini( OpenFileConfig( GetVmSettingsFilename() ) );
-	wxSettingsInterface wxsi(vmini.get());
-	IniSaver vmsaver(vmini.get());
-	SettingsSaveWrapper vmwrapper(wxsi);
-	g_Conf->EmuOptions.LoadSave(vmwrapper);
+	IniSaver vmsaver( vmini.get() );
+	g_Conf->EmuOptions.LoadSave( vmsaver );
 
 	sApp.DispatchVmSettingsEvent( vmsaver );
 }

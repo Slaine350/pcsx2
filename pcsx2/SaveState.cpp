@@ -23,34 +23,14 @@
 #include "VUmicro.h"
 #include "MTVU.h"
 #include "Cache.h"
-#include "Config.h"
+#include "gui/AppConfig.h"
 
 #include "Elfheader.h"
 #include "Counters.h"
-#include "Patch.h"
-#include "System/SysThreads.h"
 
-#include "common/pxStreams.h"
 #include "common/SafeArray.inl"
 #include "SPU2/spu2.h"
-#include "USB/USB.h"
-#ifdef _WIN32
-#include "PAD/Windows/PAD.h"
-#else
-#include "PAD/Linux/PAD.h"
-#endif
-
-#include <wx/wfstream.h>
-
 #include "gui/ConsoleLogger.h"
-
-#ifndef PCSX2_CORE
-#include "gui/App.h"
-#endif
-
-#include "common/pxStreams.h"
-#include <wx/wfstream.h>
-#include <wx/zipstrm.h>
 
 using namespace R5900;
 
@@ -78,8 +58,7 @@ wxString SaveStateBase::GetFilename( int slot )
 	wxString serialName( DiscSerial );
 	if (serialName.IsEmpty()) serialName = L"BIOS";
 
-	return (EmuFolders::Savestates +
-		pxsFmt( L"%s (%08X).%02d.p2s", WX_STR(serialName), ElfCRC, slot )).GetFullPath();
+	return ( wxString(g_Conf->Folders.Savestates.string() / static_cast<wxString>(pxsFmt( L"%s (%08X).%02d.p2s", WX_STR(serialName), ElfCRC, slot )).ToStdString()));
 
 	//return (g_Conf->Folders.Savestates +
 	//	pxsFmt( L"%08X.%03d", ElfCRC, slot )).GetFullPath();

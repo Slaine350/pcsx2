@@ -23,6 +23,7 @@
 
 #include "pxEventThread.h"
 
+#include "yaml-cpp/yaml.h"
 #include "AppCommon.h"
 #include "AppCoreThread.h"
 #include "RecentIsoList.h"
@@ -33,11 +34,17 @@
 #endif
 
 class DisassemblyDialog;
-struct HostKeyEvent;
 
-#include "GS.h"
 #include "System.h"
 #include "System/SysThreads.h"
+
+#include "GS.h"
+
+typedef struct _keyEvent
+{
+    u32 key;
+    u32 evt;
+} keyEvent;
 
 extern uptr pDsp[2];
 
@@ -356,8 +363,9 @@ enum GsWindowMode_t
 class CommandlineOverrides
 {
 public:
-	wxDirName SettingsFolder;
-	wxFileName VmSettingsFile;
+	AppConfig::FilenameOptions	Filenames;
+	std::string		SettingsFolder;
+	wxFileName		VmSettingsFile;
 
 	bool DisableSpeedhacks;
 	bool ProfilingMode;
@@ -392,7 +400,7 @@ public:
 
 	bool HasSettingsOverride() const
 	{
-		return SettingsFolder.IsOk() || VmSettingsFile.IsOk();
+		return fs::exists(SettingsFolder) || VmSettingsFile.IsOk();
 	}
 
 };
@@ -561,12 +569,15 @@ public:
 	void CleanupRestartable();
 	void CleanupResources();
 	void WipeUserModeSettings();
-	bool TestUserPermissionsRights(const wxDirName& testFolder, wxString& createFailedStr, wxString& accessFailedStr);
+	bool TestUserPermissionsRights(const std::string& testFolder);
 	void EstablishAppUserMode();
 	void ForceFirstTimeWizardOnNextRun();
 
-	wxConfigBase* OpenInstallSettingsFile();
-	wxConfigBase* TestForPortableInstall();
+	bool OpenInstallSettingsFile();
+	bool TestForPortableInstall();
+    
+    bool Load(fs::path fN);
+    YAML::Node Save(fs::path fN);
 
 	bool HasPendingSaves() const;
 	void StartPendingSave();
@@ -635,7 +646,7 @@ protected:
 	bool TryOpenConfigCwd();
 	void CleanupOnExit();
 	void OpenWizardConsole();
-	void PadKeyDispatch(const HostKeyEvent& ev);
+	void PadKeyDispatch(const keyEvent& ev);
 
 protected:
 	void HandleEvent(wxEvtHandler* handler, wxEventFunction func, wxEvent& event) const;
