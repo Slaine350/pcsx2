@@ -2,7 +2,6 @@
 #include <fstream>
 #include <iostream>
 #include <iomanip>
-#include "FixedPointTypes.inl"
 #include "ghc/filesystem.h"
 #include "Path.h"
 

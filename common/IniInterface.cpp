@@ -20,12 +20,6 @@
 
 const wxRect wxDefaultRect(wxDefaultCoord, wxDefaultCoord, wxDefaultCoord, wxDefaultCoord);
 
-// Implement FixedPointTypes (for lack of a better location, for now)
-
-#include "FixedPointTypes.inl"
-template struct FixedInt<100>;
-template struct FixedInt<256>;
-
 wxDirName g_fullBaseDirName = wxDirName(L"");
 void SetFullBaseDir(wxDirName appRoot)
 {
@@ -248,7 +242,6 @@ void IniLoader::Entry(const wxString& var, double& value, const double defvalue)
 {
 	auto readval = wxString::FromCDouble(value);
 
-	wxString readval(value.ToString());
 	if (m_Config)
 		m_Config->Read(var, &readval);
 
