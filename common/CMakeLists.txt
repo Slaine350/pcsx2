@@ -73,6 +73,7 @@ target_sources(common PRIVATE
 	MemcpyFast.h
 	MemsetFast.inl
 	Path.h
+	PathUtils.h
 	PageFaultSource.h
 	PrecompiledHeader.h
 	pxCheckBox.h
