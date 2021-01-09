@@ -17,6 +17,8 @@
 #include "Path.h"
 #include "PathUtils.h"
 #include <wx/file.h>
+#include <wx/stdpaths.h>
+#include <wx/filename.h>
 #include "ghc/filesystem.h"
 #include <wx/utils.h>
 
@@ -167,19 +169,9 @@ std::string Path::GetDirectory(const std::string &src)
     return src;
 }
 
-// TODO - blindly copy-pasted from stackoverflow, this is probably not PERFECT!
 fs::path Path::GetExecutableDirectory()
 {
-    fs::path exePath;
-#ifdef _WIN32
-    wchar_t path[MAX_PATH] = {0};
-    GetModuleFileName(NULL, path, MAX_PATH);
-    exePath = std::wstring(path);
-#else
-    char result[PATH_MAX];
-    ssize_t count = readlink("/proc/self/exe", result, PATH_MAX);
-    exePath = std::string(result, (count > 0) ? count : 0);
-#endif
+	fs::path exePath(wxStandardPaths::Get().GetExecutablePath().ToStdString());
     return exePath.parent_path();
 }
 
@@ -235,29 +227,20 @@ void pxExplore(const char* path)
 	pxExplore(fromUTF8(path));
 }
 
-bool FolderUtils::CreateFolder(fs::path path)
+wxString Path::ToWxString(const fs::path& path)
 {
-    return fs::create_directories(path.make_preferred()); // An attempt to create the User mode Dir which already exists
+#ifdef _WIN32
+    return wxString(path.wstring());
+#else
+    return wxString(path.string());
+#endif
 }
 
-bool FolderUtils::DoesExist(std::string path)
+fs::path Path::FromWxString(const wxString& path)
 {
-    return fs::exists(fs::path(path).make_preferred());
-}
-
-bool FolderUtils::DoesExist(fs::path path)
-{
-	try
-	{
-		return fs::exists(path.make_preferred());
-	}
-	catch (fs::filesystem_error ex)
-	{
-		return false;
-	}
-}
-
-bool FolderUtils::Empty(std::string path)
-{
-    return fs::is_empty(path);
+#ifdef _WIN32
+    return fs::path(path.ToStdWstring());
+#else
+    return fs::path(path.ToStdString());
+#endif
 }

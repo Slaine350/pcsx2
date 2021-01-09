@@ -7,21 +7,6 @@
 
 namespace fs = ghc::filesystem;
 
-class FolderUtils
-{
-protected:
-	fs::path folder;
-
-public:
-	bool CreateFolder(fs::path path);
-	// Is the folder empty
-	bool Empty(std::string);          
-	// Does the path exist
-	bool DoesExist(std::string path);
-	// Does the path exist
-	bool DoesExist(fs::path path);
-};
-
 namespace Path
 {
 	extern bool IsRelative(const std::string& path);
@@ -41,5 +26,7 @@ namespace Path
 	extern std::string GetRootDirectory(const wxString& src);
 	extern fs::path GetExecutableDirectory();
 	extern fs::path getPath(fs::path p, bool isPortable);
+	wxString ToWxString(const fs::path& path);
+	fs::path FromWxString(const wxString& path);
 } // namespace Path
 

@@ -58,7 +58,7 @@ wxString SaveStateBase::GetFilename( int slot )
 	wxString serialName( DiscSerial );
 	if (serialName.IsEmpty()) serialName = L"BIOS";
 
-	return ( Path::Combine(g_Conf->Folders.Savestates.string(), static_cast<wxString>(pxsFmt( L"%s (%08X).%02d.p2s", WX_STR(serialName), ElfCRC, slot )).ToStdString()));
+	return Path::ToWxString(( (g_Conf->Folders.Savestates.string() / Path::FromWxString(static_cast<wxString>(pxsFmt( L"%s (%08X).%02d.p2s", WX_STR(serialName), ElfCRC, slot ))))));
 
 	//return (g_Conf->Folders.Savestates +
 	//	pxsFmt( L"%08X.%03d", ElfCRC, slot )).GetFullPath();

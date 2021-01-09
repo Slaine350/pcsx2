@@ -400,7 +400,7 @@ public:
 
 	bool HasSettingsOverride() const
 	{
-		return folderUtils.DoesExist(SettingsFolder) || VmSettingsFile.IsOk();
+		return fs::exists(SettingsFolder) || VmSettingsFile.IsOk();
 	}
 };
 
