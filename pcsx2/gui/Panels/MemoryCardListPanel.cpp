@@ -593,7 +593,6 @@ void Panels::MemoryCardListPanel_Simple::AppStatusEvent_OnSettingsApplied()
 				Console.Error(L"Memory card was enabled, but it had an invalid file name. Aborting automatic creation. Hope for the best... (%s)", WX_STR(errMsg));
 			}
 		}
-
 		if (!m_Cards[slot].IsEnabled || !(wxFileExists(targetFile) || wxDirExists(targetFile)))
 		{
 			m_Cards[slot].IsEnabled = false;
@@ -634,7 +633,7 @@ void Panels::MemoryCardListPanel_Simple::DoRefresh()
 		//	continue;
 
 		//wxFileName fullpath( m_FolderPicker->GetPath() + g_Conf->Mcd[slot].Filename.GetFullName() );
-		wxFileName fullpath = m_FolderPicker->GetPath() + m_Cards[slot].Filename.GetFullName();
+		wxFileName fullpath((m_FolderPicker->GetPath().ToString().ToStdString() / m_Cards[slot].Filename.string()));
 
 		EnumerateMemoryCard(m_Cards[slot], fullpath, m_FolderPicker->GetPath());
 		m_Cards[slot].Slot = slot;
@@ -734,7 +733,6 @@ void Panels::MemoryCardListPanel_Simple::UiDeleteCard(McdSlotItem& card)
 	{
 
 		wxFileName fullpath(m_FolderPicker->GetPath() + card.Filename.GetFullName());
-
 		card.IsEnabled = false;
 		Apply();
 
@@ -812,9 +810,11 @@ bool Panels::MemoryCardListPanel_Simple::UiDuplicateCard(McdSlotItem& src, McdSl
 		break;
 	}
 
-	wxFileName srcfile(basepath + src.Filename);
-	wxFileName destfile(basepath + dest.Filename);
-
+		wxFileName srcfile(Path::ToWxString(Path::Combine(m_FolderPicker->GetPath().ToString().ToStdString(), src.Filename)));
+		wxFileName destfile(Path::ToWxString(Path::Combine(m_FolderPicker->GetPath().ToString().ToStdString(), dest.Filename)));
+		ScopedBusyCursor doh( Cursor_ReallyBusy );
+		
+		if( !(    ( srcfile.FileExists() && wxCopyFile( srcfile.GetFullPath(), destfile.GetFullPath(), true ) )
 			   || ( !srcfile.FileExists() && CopyDirectory( srcfile.GetFullPath(), destfile.GetFullPath() ) ) ) )
 		{
 			wxString heading;
@@ -1151,13 +1151,12 @@ void Panels::MemoryCardListPanel_Simple::ReadFilesAtMcdFolder()
 	for (uint i = 0; i < memcardList.size(); i++)
 	{
 		McdSlotItem currentCardFile;
-		bool isOk = EnumerateMemoryCard(currentCardFile, memcardList[i], m_FolderPicker->GetPath());
-		if (isOk && !isFileAssignedAndVisibleOnList(currentCardFile.Filename))
+		bool isOk=EnumerateMemoryCard( currentCardFile, memcardList[i], m_FolderPicker->GetPath() );
+		if( isOk && !isFileAssignedAndVisibleOnList( wxFileName(currentCardFile.Filename.wstring()) ) )
 		{
 			currentCardFile.Slot = -1;
 			currentCardFile.IsEnabled = false;
 			m_allFilesystemCards.push_back(currentCardFile);
-			//DevCon.WriteLn(L"Enumerated file: '%s'", WX_STR(currentCardFile.Filename.GetFullName()) );
 		}
 		/*else
 			DevCon.WriteLn(L"MCD folder card file skipped: '%s'", WX_STR(memcardList[i]) );*/
