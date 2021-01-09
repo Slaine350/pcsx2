@@ -605,7 +605,6 @@ void Panels::MemoryCardListPanel_Simple::AppStatusEvent_OnSettingsApplied()
 	_parent::AppStatusEvent_OnSettingsApplied();
 }
 
-
 //BUG: the next function is never reached because, for some reason, IsoDropTarget::OnDropFiles is called instead.
 //     Interestingly, IsoDropTarget::OnDropFiles actually "detects" a memory card file as a valid Audio-CD ISO...  - avih
 bool Panels::MemoryCardListPanel_Simple::OnDropFiles(wxCoord x, wxCoord y, const wxArrayString& filenames)
@@ -733,6 +732,10 @@ void Panels::MemoryCardListPanel_Simple::UiDeleteCard(McdSlotItem& card)
 	{
 		wxFileName fullpath(Path::ToWxString(m_FolderPicker->GetPath().ToString().ToStdString() / card.Filename));
 
+<<<<<<< HEAD
+		wxFileName fullpath(m_FolderPicker->GetPath() + card.Filename.GetFullName());
+=======
+>>>>>>> 20c6e30a2 (PathUtils: Added ToWxString function. Changed all casts to wx to use ToWxString Changed folder creation to PathDefs. Use WX for executable dir. Moved FolderUtils to Path namespace.)
 		card.IsEnabled = false;
 		Apply();
 
@@ -792,7 +795,7 @@ bool Panels::MemoryCardListPanel_Simple::UiDuplicateCard(McdSlotItem& src, McdSl
 		dest.Filename = Path::FromWxString(newFilename);
 		break;
 	}
-
+		
 		wxFileName srcfile(Path::ToWxString(m_FolderPicker->GetPath().ToString().ToStdString() / src.Filename));
 		wxFileName destfile(Path::ToWxString(m_FolderPicker->GetPath().ToString().ToStdString() / dest.Filename));
 		ScopedBusyCursor doh( Cursor_ReallyBusy );
@@ -802,15 +805,6 @@ bool Panels::MemoryCardListPanel_Simple::UiDuplicateCard(McdSlotItem& src, McdSl
 		{
 			wxString heading;
 			heading.Printf( pxE( L"Failed: Destination memory card '%s' is in use." ),
-				WX_STR(destfile.GetFullPath()), dest.Slot
-			);
-
-		wxString content;
-
-		Msgbox::Alert(heading + L"\n\n" + content, _("Copy failed!"));
-
-		return false;
-	}
 
 		// Destination memcard isEnabled state is the same now as the source's
 		wxString success;
@@ -1005,6 +999,7 @@ void Panels::MemoryCardListPanel_Simple::UiAssignUnassignFile(McdSlotItem& card)
 
 			selections.Add(sel);
 		}
+
 		wxString title;
 		wxString toPrint = Path::ToWxString(card.Filename.relative_path());
 		title.Printf(_("Select a target port for '%s'"), WX_STR(toPrint));

@@ -17,6 +17,8 @@
 #include "Path.h"
 #include "PathUtils.h"
 #include <wx/file.h>
+#include <wx/stdpaths.h>
+#include <wx/filename.h>
 #include "ghc/filesystem.h"
 #include <wx/utils.h>
 
@@ -72,7 +74,7 @@ wxDirName& wxDirName::MakeAbsolute(const wxString& cwd)
 	return *this;
 }
 
-void wxDirName::Rmdir()
+void wxDirName::Rmdir() const
 {
 	if (!Exists())
 		return;
@@ -80,7 +82,7 @@ void wxDirName::Rmdir()
 	// TODO : Throw exception if operation failed?  Do we care?
 }
 
-bool wxDirName::Mkdir()
+bool wxDirName::Mkdir() const
 {
 // wxWidgets recurses directory creation for us.
 
@@ -126,6 +128,26 @@ wxString Path::Normalize(const wxDirName& src)
 	return wxDirName(src).Normalize().ToString();
 }
 
+wxString Path::MakeAbsolute(const wxString& src)
+{
+	wxFileName absolute(src);
+	absolute.MakeAbsolute();
+	return absolute.GetFullPath();
+}
+
+// Concatenates two pathnames together, inserting delimiters (backslash on win32)
+// as needed! Assumes the 'dest' is allocated to at least g_MaxPath length.
+//
+wxString Path::Combine(const wxString& srcPath, const wxString& srcFile)
+{
+	return (wxDirName(srcPath) + srcFile).GetFullPath();
+}
+
+wxString Path::Combine(const wxDirName& srcPath, const wxFileName& srcFile)
+{
+	return (srcPath + srcFile).GetFullPath();
+}
+
 wxString Path::Combine(const wxString& srcPath, const wxDirName& srcFile)
 {
 	return (wxDirName(srcPath) + srcFile).ToString();
@@ -162,7 +184,6 @@ std::string Path::GetDirectory(const std::string &src)
 	return src;
 }
 
-// TODO - blindly copy-pasted from stackoverflow, this is probably not PERFECT!
 fs::path Path::GetExecutableDirectory()
 {
 	fs::path exePath(wxStandardPaths::Get().GetExecutablePath().ToStdString());
@@ -220,6 +241,8 @@ void pxExplore(const char* path)
 {
 	pxExplore(fromUTF8(path));
 }
+<<<<<<< HEAD
+=======
 
 wxString Path::ToWxString(const fs::path& path)
 {
@@ -238,3 +261,4 @@ fs::path Path::FromWxString(const wxString& path)
 	return fs::path(path.ToStdString());
 #endif
 }
+>>>>>>> 20c6e30a2 (PathUtils: Added ToWxString function. Changed all casts to wx to use ToWxString Changed folder creation to PathDefs. Use WX for executable dir. Moved FolderUtils to Path namespace.)
