@@ -144,7 +144,7 @@ namespace PathDefs
 			// Move all user data file into central configuration directory (XDG_CONFIG_DIR)
 			case DocsFolder_User:	return GetUserLocalDataDir();
 #else
-			case DocsFolder_User:	return (wxStandardPaths::Get().GetDocumentsDir().ToStdString() / pxGetAppName().ToStdString());
+			case DocsFolder_User:	return (Path::FromWxString(wxStandardPaths::Get().GetDocumentsDir()) / Path::FromWxString(pxGetAppName()));
 #endif
 			case DocsFolder_Custom: return CustomDocumentsFolder;
 
@@ -227,7 +227,7 @@ namespace PathDefs
 		return (GetDocuments() / "Langs").make_preferred();
 	}
 
-	std::string Get( FoldersEnum_t folderidx )
+	fs::path Get( FoldersEnum_t folderidx )
 	{
 		switch( folderidx )
 		{
@@ -245,7 +245,7 @@ namespace PathDefs
 
 			jNO_DEFAULT
 		}
-		return std::string();
+		return fs::path();
 	}
 };
 
@@ -449,11 +449,11 @@ fs::path GetUiKeysFilename()
 	return (GetSettingsFolder() / fname).make_preferred();
 }
 
-std::string AppConfig::FullpathToBios() const				{ return (Folders.Bios.string() / BaseFilenames.Bios); }
+fs::path AppConfig::FullpathToBios() const				{ return Folders.Bios / BaseFilenames.Bios; }
 
-std::string AppConfig::FullpathToMcd( uint slot ) const
+fs::path AppConfig::FullpathToMcd( uint slot ) const
 {
-	return (Folders.MemoryCards.string() / Mcd[slot].Filename.string());
+	return Folders.MemoryCards / Mcd[slot].Filename;
 }
 
 bool IsPortable()
@@ -753,22 +753,14 @@ void AppConfig::FilenameOptions::LoadSave( IniInterface& ini )
 {
 	ScopedIniGroup path( ini, L"Filenames" );
 
-	static const wxFileName pc( L"Please Configure" );
+	static const fs::path pc( "Please Configure" );
 
 	//when saving in portable mode, we just save the non-full-path filename
  	//  --> on load they'll be initialized with default (relative) paths (works for bios)
 	//note: this will break if converting from install to portable, and custom folders are used. We can live with that.
 	needRelativeName = ini.IsSaving() && IsPortable();
 
-	if( needRelativeName ) 
-	{ 
-		wxFileName bios_filename(Bios);
-		ini.Entry( L"BIOS", bios_filename, pc );
-	} 
-	else
-	{
-		ini.Entry( "BIOS", Bios, pc.GetFullPath().ToStdString() );
-	}
+	ini.Entry( "BIOS", Bios, pc );
 }
 
 // ------------------------------------------------------------------------
@@ -1070,7 +1062,7 @@ void RelocateLogfile()
 {
 	fs::create_directory(g_Conf->Folders.Logs);
 
-	wxString newlogname( (g_Conf->Folders.Logs.string() / "emuLog.txt") );
+	wxString newlogname( Path::ToWxString(g_Conf->Folders.Logs / "emuLog.txt") );
 
 	if( (emuLog != NULL) && (emuLogName != newlogname) )
 	{
@@ -1266,9 +1258,9 @@ void AppLoadSettings()
 
 static void SaveUiSettings()
 {	
-	if( !wxFile::Exists( g_Conf->CurrentIso ) )
+	if( !Path::DoesExist( g_Conf->CurrentIso ) )
 		g_Conf->CurrentIso.clear();
-	
+
 	if (!Path::DoesExist(g_Conf->Folders.RunDisc.make_preferred()))
 		g_Conf->Folders.RunDisc.clear();
 

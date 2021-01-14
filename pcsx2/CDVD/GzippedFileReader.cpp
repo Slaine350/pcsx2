@@ -147,7 +147,7 @@ static wxString ApplyTemplate(const wxString& name, const wxDirName& base,
 
 	tem.Replace(key, fname);
 	if (first > 0)
-		tem = (Path::FromWxString(base.ToString()) / Path::FromWxString(tem.ToStdString())); // ignores appRoot if tem is absolute
+		tem = Path::ToWxString(Path::FromWxString(base.ToString()) / Path::FromWxString(tem.ToStdString())); // ignores appRoot if tem is absolute
 
 	return tem;
 }
