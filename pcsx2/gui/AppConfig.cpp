@@ -114,15 +114,6 @@ namespace PathDefs
 	//  relative to the exe folder, and not relative to cwd. So the exe should be default AppRoot. - avih
 	fs::path AppRoot()
 	{
-		//AffinityAssert_AllowFrom_MainUI();
-/*
-		if (InstallationMode == InstallMode_Registered)
-		{
-			static const wxDirName cwdCache( (wxDirName)Path::Normalize(wxGetCwd()) );
-			return cwdCache;
-		}
-		else if (InstallationMode == InstallMode_Portable)
-*/		
 		if (InstallationMode == InstallMode_Registered || InstallationMode == InstallMode_Portable)
 		{
 			fs::path path(Path::GetExecutableDirectory());
@@ -763,22 +754,14 @@ void AppConfig::FilenameOptions::LoadSave( IniInterface& ini )
 {
 	ScopedIniGroup path( ini, L"Filenames" );
 
-	static const wxFileName pc( L"Please Configure" );
+	static const fs::path pc( "Please Configure" );
 
 	//when saving in portable mode, we just save the non-full-path filename
  	//  --> on load they'll be initialized with default (relative) paths (works for bios)
 	//note: this will break if converting from install to portable, and custom folders are used. We can live with that.
 	needRelativeName = ini.IsSaving() && IsPortable();
 
-	if( needRelativeName ) 
-	{ 
-		wxFileName bios_filename(Bios);
-		ini.Entry( L"BIOS", bios_filename, pc );
-	} 
-	else
-	{
-		ini.Entry( "BIOS", Bios, pc.GetFullPath().ToStdString() );
-	}
+	ini.Entry( "BIOS", Bios, pc );
 }
 
 // ------------------------------------------------------------------------
@@ -1276,8 +1259,7 @@ void AppLoadSettings()
 
 static void SaveUiSettings()
 {	
-	if( !wxFile::Exists( g_Conf->CurrentIso ) )
-	{
+	if( !fs::exists( g_Conf->CurrentIso ) )
 		g_Conf->CurrentIso.clear();
 	
 	if (!fs::exists(g_Conf->Folders.RunDisc))
