@@ -82,8 +82,8 @@ bool Pcsx2App::TestUserPermissionsRights(const std::string& testFolder)
 	{
 		fs::path folder = Path::Combine(testFolder, PermissionFolders[i]);
 
-		if (!Path::DoesExist(folder))
-			if (!Path::CreateFolder(folder))
+		if (!fs::exists(folder))
+			if (!fs::create_directory(folder))
 				ErrorFolders.push_back(folder);
 	}
 
@@ -242,9 +242,9 @@ bool Pcsx2App::Load(fs::path fileName)
 
 YAML::Node Pcsx2App::Save(fs::path fileName)
 {
-	if (!Path::DoesExist(fileName.parent_path().make_preferred()))
+	if (!fs::exists(fileName.parent_path().make_preferred()))
 	{
-		Path::CreateFolder(fileName.parent_path().make_preferred());
+		fs::create_directory(fileName.parent_path().make_preferred());
 	}
 
 	if (!stream)
@@ -281,7 +281,7 @@ bool Pcsx2App::OpenInstallSettingsFile()
 	std::string usermodeFile = (GetAppName().ToStdString() + "-reg.yaml");
 	usermodePath = Path::Combine(usrlocaldir, usermodeFile); 
 
-	if (!Path::DoesExist(usermodePath))
+	if (!fs::exists(usermodePath))
 	{
 		CustomDocumentsFolder = PathDefs::AppRoot();
 
