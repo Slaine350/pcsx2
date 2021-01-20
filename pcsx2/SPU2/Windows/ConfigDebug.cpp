@@ -16,7 +16,7 @@
 #include "PrecompiledHeader.h"
 #include "SPU2/Global.h"
 #include "Dialogs.h"
-#include "common\PathUtils.h"
+#include "common/PathUtils.h"
 
 
 bool DebugEnabled = false;
@@ -58,23 +58,19 @@ wxString RegDumpFileName;
 
 void CfgSetLogDir(const char* dir)
 {
-	LogsFolder = ((dir == nullptr) ? wxString(L"logs") : wxString(dir, wxConvFile)).ToStdString();
-	DumpsFolder = ((dir == nullptr) ? wxString(L"logs") : wxString(dir, wxConvFile)).ToStdString();
+	LogsFolder = Path::FromWxString(((dir == nullptr) ? wxString(L"logs") : wxString(dir, wxConvFile)));
+	DumpsFolder = Path::FromWxString(((dir == nullptr) ? wxString(L"logs") : wxString(dir, wxConvFile)));
 	LogLocationSetByPcsx2 = (dir != nullptr);
 }
 
-FILE* OpenBinaryLog(const std::string& logfile)
+FILE* OpenBinaryLog(const fs::path& logfile)
 {
 	return wxFopen(Path::ToWxString(LogsFolder.string() / logfile), L"wb");
 }
 
-FILE* OpenLog(const std::string& logfile)
+FILE* OpenLog(const fs::path& logfile)
 {
-	return wxFopen(Path::ToWxString(LogsFolder.string() / logfile), L"w");
 }
-
-FILE* OpenDump(const std::string& logfile)
-{
 	return wxFopen(Path::ToWxString(DumpsFolder.string() / logfile), L"w");
 }
 
@@ -117,8 +113,8 @@ namespace DebugConfig
 
 		if (!LogLocationSetByPcsx2)
 		{
-			LogsFolder = CfgLogsFolder.ToStdString();
-			DumpsFolder = CfgLogsFolder.ToStdString();
+			LogsFolder = Path::FromWxString(CfgLogsFolder);
+			DumpsFolder = Path::FromWxString(CfgLogsFolder);
 		}
 	}
 

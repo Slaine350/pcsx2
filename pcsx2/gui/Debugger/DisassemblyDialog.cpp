@@ -57,9 +57,9 @@ DebuggerHelpDialog::DebuggerHelpDialog(wxWindow* parent)
 {
 	wxBoxSizer* sizer = new wxBoxSizer(wxHORIZONTAL);
 
-	auto fileName = Path::Combine(PathDefs::GetDocs(), "debugger.txt");
+	auto fileName = (PathDefs::GetDocs() / "debugger.txt");
 
-	wxTextFile file(fileName);
+	wxTextFile file(Path::ToWxString(fileName));
 	wxString text(L"");
 
 	if (file.Open())

@@ -107,12 +107,11 @@ bool Path::IsRelative(const std::string &path)
 	return fs::path(path).is_relative();
 }
 
-// Returns -1 if the file does not exist.
-s64 Path::GetFileSize(const std::string &path)
+s64 Path::GetFileSize(const fs::path &path)
 {
-    if (!fs::exists(path.c_str()))
-        return -1;
-    return (s64)fs::file_size(path);
+	if (!fs::exists(path))
+		return -1;
+	return (s64)fs::file_size(path);
 }
 
 
@@ -131,11 +130,6 @@ wxString Path::Normalize(const wxDirName& src)
 std::string Path::MakeAbsolute(const std::string &src)
 {
     return ghc::filesystem::absolute(src);
-}
-
-wxString Path::Combine(const wxString& srcPath, const wxDirName& srcFile)
-{
-	return (wxDirName(srcPath) + srcFile).ToString();
 }
 
 // Replaces the extension of the file with the one given.
@@ -189,7 +183,7 @@ fs::path Path::getPath(fs::path p, bool isPort)
 
 // returns the base/root directory of the given path.
 // Example /this/that/something.txt -> dest == "/"
-std::string Path::GetRootDirectory(const wxString &src)
+fs::path Path::GetRootDirectory(const wxString &src)
 {
     size_t pos = src.find_first_of(wxFileName::GetPathSeparators());
     if (pos == 0)
