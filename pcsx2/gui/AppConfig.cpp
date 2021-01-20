@@ -144,7 +144,7 @@ namespace PathDefs
 			// Move all user data file into central configuration directory (XDG_CONFIG_DIR)
 			case DocsFolder_User:	return GetUserLocalDataDir();
 #else
-			case DocsFolder_User:	return (wxDirName)( wxStandardPaths::Get().GetDocumentsDir().ToStdString() / pxGetAppName().ToStdString() );
+			case DocsFolder_User:	return Path::FromWxString(wxStandardPaths::Get().GetDocumentsDir()) / Path::FromWxString(pxGetAppName());
 #endif
 			case DocsFolder_Custom: return CustomDocumentsFolder;
 
@@ -176,37 +176,37 @@ namespace PathDefs
 
 	fs::path GetSnapshots()
 	{
-		return (GetDocuments() / "snapshots").make_preferred();
+		return GetDocuments() / "snaps";
 	}
 
 	fs::path GetBios()
 	{
-		return (GetDocuments() / "bios").make_preferred();
+		return GetDocuments() / "bios";
 	}
 
 	fs::path GetCheats()
 	{
-		return (GetDocuments() / "cheats").make_preferred();
+		return GetDocuments() / "cheats";
 	}
 
 	fs::path GetCheatsWS()
 	{
-		return (GetDocuments() / "cheats_ws").make_preferred();
+		return GetDocuments() / "cheats_ws";
 	}
 
 	fs::path GetDocs()
 	{
-		return (AppRoot().parent_path() / "docs").make_preferred();
+		return GetDocuments() / "docs";
 	}
 
 	fs::path GetSavestates()
 	{
-		return (GetDocuments() / "sstates").make_preferred();
+		return GetDocuments() / "sstates";
 	}
 
 	fs::path GetMemoryCards()
 	{
-		return (GetDocuments() / "memcards").make_preferred();
+		return GetDocuments() / "memcards";
 	}
 
 	fs::path GetSettings()
@@ -219,15 +219,15 @@ namespace PathDefs
 
 	fs::path GetLogs()
 	{
-		return (GetDocuments() / "logs").make_preferred();
+		return GetDocuments() / "logs";
 	}
 
 	fs::path GetLangs()
 	{
-		return (PathDefs::AppRoot() / "Langs").make_preferred();
+		return AppRoot() / "Langs";
 	}
 
-	std::string Get( FoldersEnum_t folderidx )
+	fs::path Get( FoldersEnum_t folderidx )
 	{
 		switch( folderidx )
 		{
@@ -245,7 +245,7 @@ namespace PathDefs
 
 			jNO_DEFAULT
 		}
-		return std::string();
+		return fs::path();
 	}
 };
 
@@ -433,28 +433,34 @@ fs::path GetSettingsFolder()
 
 fs::path GetVmSettingsFilename()
 {
-	fs::path fname( !wxGetApp().Overrides.VmSettingsFile.GetFullPath().ToStdString().empty() ? wxGetApp().Overrides.VmSettingsFile.GetFullPath().ToStdString() : FilenameDefs::GetVmConfig().GetFullPath().ToStdString() );
-	return (GetSettingsFolder() / fname);
+	fs::path fname = Path::FromWxString(FilenameDefs::GetVmConfig().GetFullPath());
+	if (wxGetApp().Overrides.VmSettingsFile.IsOk())
+	{
+		fname = Path::FromWxString(wxGetApp().Overrides.VmSettingsFile.GetFullPath());
+	}
+	return GetSettingsFolder() / fname;
 }
 
 fs::path GetUiSettingsFilename()
 {
-	fs::path fname( FilenameDefs::GetUiConfig().GetFullPath().ToStdString() );
-	return (GetSettingsFolder() / fname ).make_preferred();
+	fs::path fname = Path::FromWxString(FilenameDefs::GetUiConfig().GetFullPath());
+	return GetSettingsFolder() / fname;
 }
 
 fs::path GetUiKeysFilename()
 {
-	fs::path fname( FilenameDefs::GetUiKeysConfig().GetFullPath().ToStdString() );
-	return (GetSettingsFolder() / fname).make_preferred();
+	fs::path fname = Path::FromWxString(FilenameDefs::GetUiKeysConfig().GetFullPath());
+	return GetSettingsFolder() / fname;
 }
 
-std::string AppConfig::FullpathToBios() const				{ return (Folders.Bios.string() / BaseFilenames.Bios); }
-
-wxString AppConfig::FullpathToBios() const				{ return ( Folders.Bios / BaseFilenames.Bios ); }
-wxString AppConfig::FullpathToMcd( uint slot ) const
+fs::path AppConfig::FullpathToBios() const
 {
-	return ( Folders.MemoryCards / Mcd[slot].Filename );
+	return Folders.Bios / BaseFilenames.Bios;
+}
+
+fs::path AppConfig::FullpathToMcd(uint slot) const
+{
+	return Folders.MemoryCards / Mcd[slot].Filename;
 }
 
 bool IsPortable()
@@ -492,7 +498,7 @@ AppConfig::AppConfig()
 	for( uint slot=0; slot<8; ++slot )
 	{
 		Mcd[slot].Enabled	= !FileMcd_IsMultitapSlot(slot);	// enables main 2 slots
-		Mcd[slot].Filename	= FileMcd_GetDefaultName( slot ).ToStdString();
+		Mcd[slot].Filename	= Path::FromWxString(FileMcd_GetDefaultName( slot ));
 
 		// Folder memory card is autodetected later.
 		Mcd[slot].Type = MemoryCardType::MemoryCard_File;
@@ -524,7 +530,7 @@ void App_LoadSaveInstallSettings( IniInterface& ini )
 
     wxString CustomDoc = Path::ToWxString(CustomDocumentsFolder);
     wxString Setting = Path::ToWxString(SettingsFolder);
-    wxFileName InstallF(InstallFolder);
+    wxFileName InstallF(Path::ToWxString(InstallFolder));
 
 	ini.EnumEntry( L"DocumentsFolderMode",	DocsFolderMode,	DocsFolderModeNames, (InstallationMode == InstallMode_Registered) ? DocsFolder_User : DocsFolder_Custom);
 
@@ -598,7 +604,7 @@ void AppConfig::LoadSaveRootItems( IniInterface& ini )
 
 	wxFileName res(Path::ToWxString(CurrentIso));
 	ini.Entry( L"CurrentIso", res, res, ini.IsLoading() || IsPortable() );
-	CurrentIso = res.GetFullPath().ToStdWstring();
+	CurrentIso = Path::FromWxString(res.GetFullPath());
 
 	IniEntry( CurrentBlockdump );
 	IniEntry( CurrentELF );
@@ -1214,7 +1220,7 @@ static void LoadUiSettings()
 	g_Conf = std::make_unique<AppConfig>();
 	g_Conf->LoadSave( loader );
 
-	if( !Path::DoesExist( g_Conf->CurrentIso ) )
+	if( !fs::exists( g_Conf->CurrentIso ) )
 	{
 		g_Conf->CurrentIso.clear();
 	}

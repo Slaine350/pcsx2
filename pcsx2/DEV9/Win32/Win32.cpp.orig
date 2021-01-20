@@ -219,8 +219,12 @@ void OnBrowse(HWND hW)
 	wchar_t wbuff[4096] = {0};
 	memcpy(wbuff, HDD_DEF, sizeof(HDD_DEF));
 
+<<<<<<< HEAD
+	ghc::filesystem::path inis(EmuFolders::Settings.ToString().wx_str());
+=======
 	//GHC uses UTF8 on all platforms
 	fs::path inis = GetSettingsFolder();
+>>>>>>> f06d0ec41 (DEV9: Address conflicts/regressions as a result of recent PR. Full refactor pass, focused on cleaning up string conversions)
 	wstring w_inis = inis.wstring();
 
 	OPENFILENAMEW ofn;
@@ -337,7 +341,11 @@ void OnOk(HWND hW)
 	if (hddPath.is_relative())
 	{
 		//GHC uses UTF8 on all platforms
+<<<<<<< HEAD
+		ghc::filesystem::path path(EmuFolders::Settings.ToUTF8().data());
+=======
 		fs::path path = GetSettingsFolder();
+>>>>>>> f06d0ec41 (DEV9: Address conflicts/regressions as a result of recent PR. Full refactor pass, focused on cleaning up string conversions)
 		hddPath = path / hddPath;
 	}
 
@@ -500,7 +508,7 @@ BOOL CALLBACK ConfigureDlgProc(HWND hW, UINT uMsg, WPARAM wParam, LPARAM lParam)
 void DEV9configure()
 {
 	ScopedCoreThreadPause paused_core;
-	Config oldConfig = config;
+	ConfigDEV9 oldConfig = config;
 
 	DialogBox(hInst,
 		MAKEINTRESOURCE(IDD_CONFIG),

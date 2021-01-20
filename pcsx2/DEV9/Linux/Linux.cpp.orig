@@ -36,6 +36,7 @@
 #include "DEV9/pcap_io.h"
 #include "DEV9/net.h"
 #include "DEV9/PacketReader/IP/IP_Address.h"
+#include "Config.h"
 #include "gui/AppCoreThread.h"
 
 #include "DEV9/ATA/HddCreate.h"
@@ -199,12 +200,21 @@ void OnInitDialog()
 
 void OnBrowse(GtkButton* button, gpointer usr_data)
 {
+<<<<<<< HEAD
+	ghc::filesystem::path inis(EmuFolders::Settings.ToString().ToStdString());
+
+	static const wxChar* hddFilterType = L"HDD|*.raw;*.RAW";
+
+	wxFileDialog ctrl(nullptr, _("HDD Image File"), EmuFolders::Settings.ToString(), HDD_DEF,
+		(wxString)hddFilterType + L"|" + _("All Files (*.*)") + L"|*.*", wxFD_SAVE);
+=======
 	ghc::filesystem::path inis(GetSettingsFolder());
 
 	static const wxChar* hddFilterType = L"HDD|*.raw;*.RAW";
 
 	wxFileDialog ctrl(nullptr, _("HDD Image File"), Path::ToWxString(GetSettingsFolder()), HDD_DEF,
 					  (wxString)hddFilterType + L"|" + _("All Files (*.*)") + L"|*.*", wxFD_SAVE);
+>>>>>>> f06d0ec41 (DEV9: Address conflicts/regressions as a result of recent PR. Full refactor pass, focused on cleaning up string conversions)
 
 	if (ctrl.ShowModal() != wxID_CANCEL)
 	{
@@ -279,8 +289,12 @@ void OnOk()
 
 	if (hddPath.is_relative())
 	{
+<<<<<<< HEAD
+		ghc::filesystem::path path(EmuFolders::Settings.ToString().wx_str());
+=======
 		//GHC uses UTF8 on all platforms
 		ghc::filesystem::path path(GetSettingsFolder());
+>>>>>>> f06d0ec41 (DEV9: Address conflicts/regressions as a result of recent PR. Full refactor pass, focused on cleaning up string conversions)
 		hddPath = path / hddPath;
 	}
 
@@ -298,7 +312,7 @@ void OnOk()
 void DEV9configure()
 {
 	ScopedCoreThreadPause paused_core;
-	Config oldConfig = config;
+	ConfigDEV9 oldConfig = config;
 
 	gtk_init(NULL, NULL);
 	GError* error = NULL;
