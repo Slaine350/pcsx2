@@ -1265,13 +1265,14 @@ set(pcsx2SystemHeaders
 	System/RecTypes.h
 	System/SysThreads.h)
 
+
 # Utilities sources
 set(pcsx2UtilitiesSources
 	Utilities/FileUtils.cpp)
 
 # Utilities headers
 set(pcsx2UtilitiesHeaders
-	Utilities/AsciiFile.h)
+Utilities/AsciiFile.h)
 
 
 # Windows sources
