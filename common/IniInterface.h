@@ -15,7 +15,9 @@
 
 #pragma once
 
-#include "Path.h"
+#include "common/PathUtils.h"
+#include <string>
+#include <map>
 #include <wx/config.h>
 #include <wx/gdicmn.h>
 
@@ -39,8 +41,8 @@ public:
 	explicit IniInterface(wxConfigBase& config);
 	explicit IniInterface(wxConfigBase* config);
 
-	void SetPath(const wxString& path);
-	void Flush();
+	void SetPath(const wxString &path);
+	bool Flush();
 
 	wxConfigBase& GetConfig()
 	{
@@ -52,13 +54,16 @@ public:
 	virtual bool IsLoading() const = 0;
 	bool IsSaving() const { return !IsLoading(); }
 
-	virtual void Entry(const std::string& var, std::string& value, const std::string defvalue = std::string()) = 0;
-	virtual void Entry(const wxString& var, wxString& value, const wxString defvalue = wxString()) = 0;
-	virtual void Entry(const wxString& var, wxDirName& value, const wxDirName defvalue = wxDirName(), bool isAllowRelative = false) = 0;
-	virtual void Entry(const wxString& var, wxFileName& value, const wxFileName defvalue = wxFileName(), bool isAllowRelative = false) = 0;
-	virtual void Entry(const wxString& var, int& value, const int defvalue = 0) = 0;
-	virtual void Entry(const wxString& var, uint& value, const uint defvalue = 0) = 0;
-	virtual void Entry(const wxString& var, bool& value, const bool defvalue = false) = 0;
+	virtual void Entry(const std::string &var, std::string &value, const std::string defvalue) = 0;
+	virtual void Entry(const std::string& key, std::map<std::string, int>& var, const int defValue) = 0;
+	virtual void Entry(const wxString &var, wxString &value, const wxString defvalue = wxString()) = 0;
+	virtual void Entry(const wxString &var, wxDirName &value, const wxDirName defvalue = wxDirName(), bool isAllowRelative = false) = 0;
+	virtual void Entry(const wxString &var, fs::path &value, const fs::path defvalue) = 0;
+	virtual void Entry(const wxString &var, fs::path& value, fs::path defvalue, fs::path base) = 0;
+	virtual void Entry(const wxString &var, wxFileName &value, const wxFileName defvalue = wxFileName(), bool isAllowRelative = false) = 0;
+	virtual void Entry(const wxString &var, int &value, const int defvalue = 0) = 0;
+	virtual void Entry(const wxString &var, uint &value, const uint defvalue = 0) = 0;
+	virtual void Entry(const wxString &var, bool &value, const bool defvalue = false) = 0;
 
 	// This special form of Entry is provided for bitfields, which cannot be passed by reference.
 	virtual bool EntryBitBool(const wxString &var, bool value, const bool defvalue = false) = 0;
@@ -118,14 +123,16 @@ public:
 
 	bool IsLoading() const override { return true; }
 
-	void Entry(const std::string& var, std::string& value, const std::string defvalue = std::string()) override;
-	void Entry(const wxString& var, wxString& value, const wxString defvalue = wxEmptyString) override;
-	void Entry(const wxString& var, wxDirName& value, const wxDirName defvalue = wxDirName(), bool isAllowRelative = false) override;
-	void Entry(const wxString& var, fs::path& value, const fs::path defvalue = fs::path(), bool isAllowRelative = false) override;
-	void Entry(const wxString& var, wxFileName& value, const wxFileName defvalue = wxFileName(), bool isAllowRelative = false) override;
-	void Entry(const wxString& var, int& value, const int defvalue = 0) override;
-	void Entry(const wxString& var, uint& value, const uint defvalue = 0) override;
-	void Entry(const wxString& var, bool& value, const bool defvalue = false) override;
+	void Entry(const std::string &var, std::string &value, const std::string defvalue) override;
+	void Entry(const std::string& key, std::map<std::string, int>& var, const int defValue) override;
+	void Entry(const wxString &var, wxString& value, const wxString defvalue = wxEmptyString )override;
+	void Entry(const wxString &var, wxDirName& value, const wxDirName defvalue = wxDirName(), bool isAllowRelative = false) override;
+	void Entry(const wxString &var, fs::path& value, const fs::path defvalue) override;
+	void Entry(const wxString &var, fs::path& value, fs::path defvalue, fs::path base) override;
+	void Entry(const wxString &var, wxFileName& value, const wxFileName defvalue = wxFileName(), bool isAllowRelative = false) override;
+	void Entry(const wxString &var, int& value, const int defvalue = 0) override;
+	void Entry(const wxString &var, uint& value, const uint defvalue = 0) override;
+	void Entry(const wxString &var, bool& value, const bool defvalue = false) override;
 
 	bool EntryBitBool(const wxString& var, bool value, const bool defvalue = false) override;
 	int EntryBitfield(const wxString& var, int value, const int defvalue = 0) override;
@@ -158,10 +165,12 @@ public:
 
 	bool IsLoading() const override { return false; }
 
-	void Entry(const std::string& var, std::string& value, const std::string defvalue = std::string()) override;
+	void Entry(const std::string& var, std::string& value, const std::string defvalue) override;
+	void Entry(const std::string& key, std::map<std::string, int>& var, const int defValue) override;
 	void Entry(const wxString& var, wxString& value, const wxString defvalue = wxString()) override;
 	void Entry(const wxString& var, wxDirName& value, const wxDirName defvalue = wxDirName(), bool isAllowRelative = false) override;
-	void Entry(const wxString& var, fs::path& value, const fs::path defvalue = fs::path(), bool isAllowRelative = false) override;
+	void Entry(const wxString& var, fs::path& value, const fs::path defvalue) override;
+	void Entry(const wxString& var, fs::path& value, fs::path defvalue, fs::path base) override;
 	void Entry(const wxString& var, wxFileName& value, const wxFileName defvalue = wxFileName(), bool isAllowRelative = false) override;
 	void Entry(const wxString& var, int& value, const int defvalue = 0) override;
 	void Entry(const wxString& var, uint& value, const uint defvalue = 0) override;
@@ -185,7 +194,8 @@ protected:
 // syntax errors. >_<
 //
 #define IniEntry(varname) ini.Entry(#varname, varname, varname)
-#define IniEntryDirFile(varname, isAllowRelative) ini.Entry(wxT(#varname), varname, varname, isAllowRelative)
+#define IniEntryDirFile(varname, isAllowRelative) ini.Entry(#varname, varname, varname, isAllowRelative)
+#define IniFileDirectory(varname, base) ini.Entry(wxT(#varname), varname, varname, base)
 #define IniBitfield(varname) varname = ini.EntryBitfield(wxT(#varname), varname, varname)
 #define IniBitBool(varname) varname = ini.EntryBitBool(wxT(#varname), !!varname, varname)
 
