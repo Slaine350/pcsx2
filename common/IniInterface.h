@@ -42,7 +42,7 @@ public:
 	explicit IniInterface(wxConfigBase *config);
 
 	void SetPath(const wxString &path);
-	void Flush();
+	bool Flush();
 
 	wxConfigBase &GetConfig()
 	{

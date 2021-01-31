@@ -79,10 +79,12 @@ void IniInterface::SetPath(const wxString& path)
 		m_Config->SetPath(path);
 }
 
-void IniInterface::Flush()
+bool IniInterface::Flush()
 {
 	if (m_Config)
-		m_Config->Flush();
+		return m_Config->Flush();
+	else
+		return false;
 }
 
 
@@ -120,12 +122,10 @@ void IniLoader::Entry(const std::string &var, std::string &value, const std::str
 
 void IniLoader::Entry(const std::string& key, std::map<std::string, int>& var, const int defValue)
 {
-	int value = defValue;
-	if (m_Config)
-	{
-		m_Config->Read(Path::ToWxString(key), &value, defValue);
-	}
-	var[key] = value;
+    int value = defValue;
+    if (m_Config)
+        m_Config->Read(Path::ToWxString(key), &value, defValue);
+    var[key] = value;
 }
 
 void IniLoader::Entry(const wxString &var, wxString &value, const wxString defvalue)
@@ -349,10 +349,10 @@ IniSaver::IniSaver()
 
 void IniSaver::Entry(const std::string& var, std::string& value, const std::string defvalue)
 {
-	wxString saver(value);
-	if (!m_Config)
-		return;
-	m_Config->Write(var, saver);
+    wxString saver(value);
+    if (!m_Config)
+        return;
+    m_Config->Write(var, saver);
 }
 
 void IniSaver::Entry(const std::string& key, std::map<std::string, int>& var, const int defValue)
@@ -369,8 +369,8 @@ void IniSaver::Entry(const std::string& key, std::map<std::string, int>& var, co
 
 void IniSaver::Entry(const wxString &var, wxString &value, const wxString defvalue)
 {
-	if (!m_Config)
-		return;
+    if (!m_Config)
+        return;
 	m_Config->Write(var, value);
 }
 
