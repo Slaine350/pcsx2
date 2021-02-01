@@ -369,8 +369,8 @@ void IniSaver::Entry(const std::string& key, std::map<std::string, int>& var, co
 
 void IniSaver::Entry(const wxString &var, wxString &value, const wxString defvalue)
 {
-    if (!m_Config)
-        return;
+	if (!m_Config)
+		return;
 	m_Config->Write(var, value);
 }
 

@@ -436,7 +436,6 @@ fs::path GetVmSettingsFilename()
 {
 	fs::path fname = Path::FromWxString(FilenameDefs::GetVmConfig().GetFullPath());
 	if (wxGetApp().Overrides.VmSettingsFile.IsOk())
-	{
 		fname = Path::FromWxString(wxGetApp().Overrides.VmSettingsFile.GetFullPath());
 	}
 	return GetSettingsFolder() / fname;
@@ -1242,20 +1241,14 @@ static void LoadUiSettings()
 	g_Conf->LoadSave( loader );
 
 	if (!Path::DoesExist(g_Conf->CurrentIso) || !fs::is_regular_file(g_Conf->CurrentIso))
-	{
 		g_Conf->CurrentIso.clear();
-	}
 
 #if defined(_WIN32)
 	if( !Path::DoesExist(g_Conf->Folders.RunDisc.make_preferred()) )
-	{
 		g_Conf->Folders.RunDisc.clear();
-	}
 #else
 	if ( !Path::DoesExist(g_Conf->Folders.RunDisc.make_preferred()))
-	{
 		g_Conf->Folders.RunDisc.clear();
-	}
 #endif
 
 	sApp.DispatchUiSettingsEvent( loader );

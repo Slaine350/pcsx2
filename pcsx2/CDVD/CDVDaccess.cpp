@@ -383,9 +383,7 @@ bool DoCDVDopen()
 		somepick = L"Untitled";
 
 	if (g_Conf->CurrentBlockdump.empty())
-	{
 		g_Conf->CurrentBlockdump = wxGetCwd();
-	}
 
 	wxString temp((g_Conf->CurrentBlockdump + somepick.ToStdString()));
 
