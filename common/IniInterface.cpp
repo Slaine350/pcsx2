@@ -349,10 +349,10 @@ IniSaver::IniSaver()
 
 void IniSaver::Entry(const std::string& var, std::string& value, const std::string defvalue)
 {
-    wxString saver(value);
-    if (!m_Config)
-        return;
-    m_Config->Write(var, saver);
+	wxString saver(value);
+	if (!m_Config)
+		return;
+	m_Config->Write(var, saver);
 }
 
 void IniSaver::Entry(const std::string& key, std::map<std::string, int>& var, const int defValue)
@@ -384,7 +384,7 @@ void IniSaver::Entry(const wxString& var, wxDirName& value, const wxDirName defv
 		res.Normalize();
 
 	if (isAllowRelative)
-		res = wxDirName::MakeAutoRelativeTo(res, g_fullBaseDirName.ToString());
+		res = Path::ToWxString(fs::relative(Path::FromWxString(res.ToString()), Path::FromWxString(g_fullBaseDirName.ToString())));
 
 	m_Config->Write(var, res.ToString());
 }
@@ -432,7 +432,7 @@ void IniSaver::Entry(const wxString& var, wxFileName& value, const wxFileName de
 		res.Normalize();
 
 	if (isAllowRelative)
-		res = wxDirName::MakeAutoRelativeTo(res, g_fullBaseDirName.ToString());
+		res = Path::ToWxString(fs::relative(Path::FromWxString(res.GetFullPath()), Path::FromWxString(g_fullBaseDirName.ToString())));
 
 	m_Config->Write(var, res.GetFullPath());
 }
