@@ -18,23 +18,7 @@
 
 #include "IopCommon.h"
 #include "CDVDaccess.h"
-
-// Not used.
-typedef struct
-{
-	s32 y0, y1;
-} ADPCM_Decode_t;
-
-// Not used.
-typedef struct
-{
-	s32 freq;
-	s32 nbits;
-	s32 stereo;
-	s32 nsamples;
-	ADPCM_Decode_t left, right;
-	s16 pcm[16384];
-} xa_decode_t;
+#include "Decode_XA.h"
 
 struct cdrStruct
 {
@@ -96,6 +80,7 @@ u8 cdrRead1(void);
 u8 cdrRead2(void);
 u8 cdrRead3(void);
 void setPs1CDVDSpeed(int speed);
+s32 PlayXA(int channel);
 void cdrWrite0(u8 rt);
 void cdrWrite1(u8 rt);
 void cdrWrite2(u8 rt);

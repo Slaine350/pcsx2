@@ -100,6 +100,12 @@ u8 Test23[] = {0x43, 0x58, 0x44, 0x32, 0x39, 0x34, 0x30, 0x51};
 #define MODE_AUTOPAUSE (1 << 1) // 0x02
 #define MODE_CDDA (1 << 0)      // 0x01
 
+/* XA submode */
+#define SUBMODE_AUDIO (1 << 2)
+
+/* XA-ADPCM Coding */
+#define XA_STEREO (1 << 0)
+
 /* Status flags, to go on cdr.StatP */
 #define STATUS_PLAY (1 << 7)      // 0x80
 #define STATUS_SEEK (1 << 6)      // 0x40
@@ -576,8 +582,26 @@ void cdrReadInterrupt()
 		return;
 	}
 
-	cdr.Stat = DataReady;
+	if ((cdr.Muted == 1) && (cdr.Mode & 0x40) && (cdr.FirstSector != -1)) { // CD-XA
+		if ((cdr.Transfer[4+2] & 0x4) &&
+			((cdr.Mode&0x8) ? (cdr.Transfer[4+1] == cdr.Channel) : 1) &&
+			(cdr.Transfer[4+0] == cdr.File)) {
+			int ret = xa_decode_sector(&cdr.Xa, cdr.Transfer+4, cdr.FirstSector);
 
+			if (!ret) {
+				// This is a callback function that refrences a plugin defined FeedXA function...
+				//SPU_playADPCMchannel(&cdr.Xa);
+				cdr.FirstSector = 0;
+			}
+			else cdr.FirstSector = -1;
+		}
+	}
+
+	else
+	{
+		cdr.Stat = DataReady;
+	}
+	
 	CDVD_LOG(" %x:%x:%x", cdr.Transfer[0], cdr.Transfer[1], cdr.Transfer[2]);
 
 	cdr.SetSector[2]++;
@@ -666,6 +690,24 @@ void setPs1CDVDSpeed(int speed)
 	//Console.Warning(L"SPEED: %dX", speed);
 	cdReadTime = (PSXCLK / (75 * speed));
 	//Console.Warning(L"cdReadTime: %d", unsigned(cdReadTime));
+}
+
+s32 PlayXA(int channel)
+{
+	/*if (cdr.Xa.pcm[channel].size() > 0)
+	{
+		// Assume there's data?
+		s32 returnVal = (s32)cdr.Xa.pcm[channel].back();
+
+		Console.Warning("Sample: %02x", returnVal);
+
+		cdr.Xa.pcm[channel].pop_back();
+		return returnVal;
+	}
+	else
+	{
+		return 0;
+	}*/
 }
 
 u8 cdrRead1(void)
@@ -1059,11 +1101,12 @@ void psxDma3(u32 madr, u32 bcr, u32 chcr)
 	{
 		case 0x11000000:
 		case 0x11400100:
-			if (cdr.Readed == 0)
+			if (cdr.Transfer == nullptr)
 			{
 				DevCon.Warning("*** DMA 3 *** NOT READY");
-				HW_DMA3_CHCR &= ~0x01000000; //hack
-				psxDmaInterrupt(3);          //hack
+				// Start read again yo. Read's need to happen again
+				// TODO: Remeber which read N, S happened previous and rexecute that
+				ReadTrack();
 				return;
 			}
 
