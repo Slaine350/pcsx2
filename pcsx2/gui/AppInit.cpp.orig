@@ -21,6 +21,7 @@
 #include "MTVU.h" // for thread cancellation on shutdown
 
 #include "common/IniInterface.h"
+#include "common/StringUtil.h"
 #include "DebugTools/Debug.h"
 #include "Dialogs/ModalPopups.h"
 
@@ -458,7 +459,7 @@ bool Pcsx2App::OnInit()
 		(new GameDatabaseLoaderThread())->Start();
 
 		// By default no IRX injection
-		g_Conf->CurrentIRX = "";
+		EmuConfig.CurrentIRX.clear();
 
 		if (Startup.SysAutoRun)
 		{
@@ -467,7 +468,11 @@ bool Pcsx2App::OnInit()
 			if (Startup.CdvdSource == CDVD_SourceType::Iso)
 				SysUpdateIsoSrcFile(Startup.IsoFile);
 			sApp.SysExecute(Startup.CdvdSource);
+<<<<<<< HEAD
+			EmuConfig.CurrentGameArgs = StringUtil::wxStringToUTF8String(Startup.GameLaunchArgs);
+=======
 			g_Conf->CurrentGameArgs = Path::FromWxString(Startup.GameLaunchArgs);
+>>>>>>> 15b24cf38 (AppInit.cpp: Fix unicode types and casts after rebase)
 		}
 		else if (Startup.SysAutoRunElf)
 		{
@@ -475,11 +480,6 @@ bool Pcsx2App::OnInit()
 
 			// wxPATH_NATIVE is broken on msw, it can delete the first directory after the volume
 			// EX: P://dir1/dir2/elf.elf -> P://dir2/ ???
-#ifdef _WIN32
-			wxFileName elfFile = wxFileName(Startup.ElfFile, wxPATH_WIN);
-#else
-			wxFileName elfFile = wxFileName(Startup.ElfFile, wxPATH_NATIVE);
-#endif
 
 			fs::path elfFile = fs::path(Path::FromWxString(Startup.ElfFile));
 
@@ -497,7 +497,11 @@ bool Pcsx2App::OnInit()
 		{
 			g_Conf->EmuOptions.UseBOOT2Injection = true;
 
+<<<<<<< HEAD
+			EmuConfig.CurrentIRX = StringUtil::wxStringToUTF8String(Startup.ElfFile);
+=======
 			g_Conf->CurrentIRX = Path::FromWxString(Startup.ElfFile);
+>>>>>>> 15b24cf38 (AppInit.cpp: Fix unicode types and casts after rebase)
 
 			// FIXME: ElfFile is an irx it will crash
 			sApp.SysExecute(Startup.CdvdSource, Path::FromWxString(Startup.ElfFile));
