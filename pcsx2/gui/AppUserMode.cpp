@@ -32,7 +32,7 @@ bool 					runWizard  = true; // This should default to true unless the stream sa
 
 std::vector<std::string> ErrorFolders;
 
-std::string usermodePath;
+fs::path usermodePath;
 
 fs::path CustomDocumentsFolder;
 fs::path SettingsFolder;
@@ -76,8 +76,8 @@ bool Pcsx2App::TestUserPermissionsRights(const fs::path& testFolder)
 	{
 		fs::path folder = (testFolder / PermissionFolders[i]);
 
-		if (!fs::exists(folder))
-			if (!fs::create_directory(folder))
+		if (!Path::DoesExist(folder))
+			if (!Path::CreateFolder(folder))
 				ErrorFolders.push_back(folder);
 	}
 
