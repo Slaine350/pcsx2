@@ -23,7 +23,7 @@
 #include "Renderers/OpenGL/GSRendererOGL.h"
 #include "GSLzma.h"
 
-#include "gui/AppConfig.h"    // GetSettingsFolder()
+#include "Config.h"
 #include "common/pxStreams.h"
 
 #ifdef _WIN32
@@ -658,7 +658,7 @@ uint32 GSmakeSnapshot(const char* path)
 	}
 }
 
-void GSkeyEvent(GSKeyEventData* e)
+void GSkeyEvent(const HostKeyEvent& e)
 {
 	try
 	{
@@ -860,19 +860,6 @@ void GSsetExclusive(int enabled)
 	if (s_gs)
 	{
 		s_gs->SetVSync(s_vsync);
-	}
-}
-
-bool GSGetFMVSwitch()
-{
-	return s_gs ? s_gs->GetFMVSwitch() : false;
-}
-
-void GSSetFMVSwitch(bool enabled)
-{
-	if (s_gs)
-	{
-		s_gs->SetFMVSwitch(enabled);
 	}
 }
 
@@ -1174,7 +1161,7 @@ void* fifo_alloc(size_t size, size_t repeat)
 
 	if (repeat >= countof(s_Next))
 	{
-		fprintf(stderr, "Memory mapping overflow (%zu >= %u)\n", repeat, countof(s_Next));
+		fprintf(stderr, "Memory mapping overflow (%zu >= %u)\n", repeat, static_cast<unsigned>(countof(s_Next)));
 		return vmalloc(size * repeat, false); // Fallback to default vmalloc
 	}
 
@@ -1740,9 +1727,6 @@ void GSApp::BuildConfigurationMap(const fs::path lpFileName)
 	m_configuration_map["inifile"] = lpFileName.string();
 
 	// Load config from file
-#ifdef _WIN32
-	std::ifstream file(convert_utf8_to_utf16(lpFileName));
-#else
 	std::ifstream file(lpFileName);
 
 	if (!file.is_open())
@@ -1785,9 +1769,14 @@ void GSApp::SetConfigDir()
 	// we need to initialize the ini folder later at runtime than at theApp init, as
 	// core settings aren't populated yet, thus we do populate it if needed either when
 	// opening GS settings or init -- govanify
+<<<<<<< HEAD
+	wxString iniName(L"GS.ini");
+	m_ini = EmuFolders::Settings.Combine(iniName).GetFullPath();
+=======
 	// Change this to pString later? -- weirdbeard
 	std::string iniName("GS.ini");
 	m_ini = GetSettingsFolder() / iniName;
+>>>>>>> 9286acb83 (GS: Fix improper variable types and casts CDVD.cpp: Add Missing include)
 }
 
 std::string GSApp::GetConfigS(const char* entry)

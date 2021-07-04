@@ -110,6 +110,7 @@
     <ClInclude Include="MathUtils.h" />
     <ClInclude Include="MemcpyFast.h" />
     <ClInclude Include="Path.h" />
+    <ClInclude Include="PathUtils.h" />
     <ClInclude Include="PrecompiledHeader.h" />
     <ClInclude Include="RedtapeWindows.h" />
     <ClInclude Include="SafeArray.h" />
