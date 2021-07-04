@@ -104,6 +104,7 @@
     <ClInclude Include="MathUtils.h" />
     <ClInclude Include="MemcpyFast.h" />
     <ClInclude Include="Path.h" />
+    <ClInclude Include="PathUtils.h" />
     <ClInclude Include="PrecompiledHeader.h" />
     <ClInclude Include="pxCheckBox.h" />
     <ClInclude Include="pxEvents.h" />
