@@ -228,8 +228,8 @@ static void iIopDumpBlock(int startpc, u8* ptr)
 	u8 used[34];
 	int numused, count;
 
-	Console.WriteLn("dump1 %x:%x, %x", startpc, psxpc, psxRegs.cycle);
-	fs::create_directory(g_Conf->Folders.Logs);
+	Console.WriteLn( "dump1 %x:%x, %x", startpc, psxpc, psxRegs.cycle );
+	fs::create_directories(g_Conf->Folders.Logs);
 
 	wxString filename(Path::ToWxString(g_Conf->Folders.Logs / Path::FromWxString(wxsFormat(L"psxdump%.8X.txt", startpc))));
 	AsciiFile f(filename, L"w");

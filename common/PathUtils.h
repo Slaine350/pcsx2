@@ -21,6 +21,7 @@ namespace Path
 	extern std::string GetFilename(const std::string& src);
 	extern std::string GetDirectory(const std::string& src);
 	extern wxString GetFilenameWithoutExt(const wxString& src);
+	extern bool IsDirectoryWithinDirectory(fs::path base, fs::path dir);
 	extern fs::path GetRootDirectory(const wxString& src);
 	extern fs::path GetExecutableDirectory();
 	extern fs::path getPath(fs::path p, bool isPortable);
