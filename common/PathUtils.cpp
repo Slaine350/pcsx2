@@ -17,6 +17,8 @@
 #include "Path.h"
 #include "PathUtils.h"
 #include <wx/file.h>
+#include <wx/stdpaths.h>
+#include <wx/filename.h>
 #include "ghc/filesystem.h"
 #include <wx/utils.h>
 
@@ -99,12 +101,6 @@ bool wxDirName::Mkdir()
 //  Path namespace (wxFileName helpers)
 // ---------------------------------------------------------------------------------
 
-
-bool Path::IsRelative(const std::string &path)
-{
-	return fs::path(path).is_relative();
-}
-
 bool Path::IsDirectoryWithinDirectory(fs::path base, fs::path dir)
 {
 	fs::path relativePath = fs::relative(fs::absolute(dir), fs::absolute(base));
@@ -160,12 +156,6 @@ wxString Path::GetFilenameWithoutExt(const wxString& src)
 	return wxFileName(src).GetName();
 }
 
-std::string Path::GetDirectory(const std::string &src)
-{
-	return src;
-}
-
-// TODO - blindly copy-pasted from stackoverflow, this is probably not PERFECT!
 fs::path Path::GetExecutableDirectory()
 {
 	fs::path exePath(wxStandardPaths::Get().GetExecutablePath().ToStdWstring());
