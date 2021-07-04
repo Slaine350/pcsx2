@@ -23,7 +23,7 @@
 #include "GS_types.h"
 #include "Window/GSSetting.h"
 #include "SaveState.h"
-#include "Utilities/PathUtils.h"
+#include "common/PathUtils.h"
 
 #ifdef _WIN32
 
