@@ -76,7 +76,7 @@ bool Pcsx2App::TestUserPermissionsRights(const fs::path& testFolder)
 	{
 		fs::path folder = (testFolder / PermissionFolders[i]);
 
-		if (!Path::DoesExist(folder))
+		if (!fs::exists(folder))
 			if (!Path::CreateFolder(folder))
 				ErrorFolders.push_back(folder);
 	}
@@ -283,7 +283,7 @@ bool Pcsx2App::OpenInstallSettingsFile()
 
 	InstallFolder = Path::FromWxString((wxFileName(wxStandardPaths::Get().GetExecutablePath())).GetPath());
 
-	std::string usermodeFile = (GetAppName().ToStdString() + "-reg.yaml");
+	fs::path usermodeFile = (Path::FromWxString(GetAppName()).concat("-reg.yaml"));
 	usermodePath = (usrlocaldir / usermodeFile); 
 
 	if (!fs::exists(usermodePath))
