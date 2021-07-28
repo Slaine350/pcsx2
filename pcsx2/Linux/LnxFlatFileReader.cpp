@@ -15,7 +15,7 @@
 
 #include "PrecompiledHeader.h"
 #include "AsyncFileReader.h"
-#include "PathUtils.h"
+#include "common/PathUtils.h"
 
 FlatFileReader::FlatFileReader(bool shareWrite) : shareWrite(shareWrite)
 {
