@@ -1,0 +1,2 @@
+add_pcsx2_test(pstring_test test.cpp ${CMAKE_SOURCE_DIR}/common/include/Utilities/PString.h ${CMAKE_SOURCE_DIR}/common/src/Utilities/PString.cpp)
+target_include_directories(pstring_test PRIVATE ${CMAKE_SOURCE_DIR}/common/src/Utilities)
