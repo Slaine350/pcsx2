@@ -124,14 +124,14 @@ public:
 
 	void Entry(const std::string &var, std::string &value, const std::string defvalue) override;
 	void Entry(const std::string& key, std::map<std::string, int>& var, const int defValue) override;
-	void Entry(const wxString &var, wxString &value, const wxString defvalue = wxEmptyString);
-	void Entry(const wxString &var, wxDirName &value, const wxDirName defvalue = wxDirName(), bool isAllowRelative = false);
+	void Entry(const wxString &var, wxString &value, const wxString defvalue = wxEmptyString) override;
+	void Entry(const wxString &var, wxDirName &value, const wxDirName defvalue = wxDirName(), bool isAllowRelative = false) override;
 	void Entry(const wxString &var, fs::path &value, const fs::path defvalue) override;
 	void Entry(const wxString &var, fs::path &value, fs::path defvalue, fs::path base) override;
-	void Entry(const wxString &var, wxFileName &value, const wxFileName defvalue = wxFileName(), bool isAllowRelative = false);
-	void Entry(const wxString &var, int &value, const int defvalue = 0);
-	void Entry(const wxString &var, uint &value, const uint defvalue = 0);
-	void Entry(const wxString &var, bool &value, const bool defvalue = false);
+	void Entry(const wxString &var, wxFileName &value, const wxFileName defvalue = wxFileName(), bool isAllowRelative = false) override;
+	void Entry(const wxString &var, int &value, const int defvalue = 0) override;
+	void Entry(const wxString &var, uint &value, const uint defvalue = 0) override;
+	void Entry(const wxString &var, bool &value, const bool defvalue = false) override;
 
 	bool EntryBitBool(const wxString& var, bool value, const bool defvalue = false) override;
 	int EntryBitfield(const wxString& var, int value, const int defvalue = 0) override;
@@ -166,14 +166,14 @@ public:
 
 	void Entry(const std::string &var, std::string &value, const std::string defvalue) override;
 	void Entry(const std::string& key, std::map<std::string, int>& var, const int defValue) override;
-	void Entry(const wxString &var, wxString &value, const wxString defvalue = wxString());
-	void Entry(const wxString &var, wxDirName &value, const wxDirName defvalue = wxDirName(), bool isAllowRelative = false);
+	void Entry(const wxString &var, wxString &value, const wxString defvalue = wxString()) override;
+	void Entry(const wxString &var, wxDirName &value, const wxDirName defvalue = wxDirName(), bool isAllowRelative = false) override;
 	void Entry(const wxString &var, fs::path &value, const fs::path defvalue) override;
 	void Entry(const wxString &var, fs::path &value, fs::path defvalue, fs::path base) override;
-	void Entry(const wxString &var, wxFileName &value, const wxFileName defvalue = wxFileName(), bool isAllowRelative = false);
-	void Entry(const wxString &var, int &value, const int defvalue = 0);
-	void Entry(const wxString &var, uint &value, const uint defvalue = 0);
-	void Entry(const wxString &var, bool &value, const bool defvalue = false);
+	void Entry(const wxString &var, wxFileName &value, const wxFileName defvalue = wxFileName(), bool isAllowRelative = false) override;
+	void Entry(const wxString &var, int &value, const int defvalue = 0) override;
+	void Entry(const wxString &var, uint &value, const uint defvalue = 0) override;
+	void Entry(const wxString &var, bool &value, const bool defvalue = false) override;
 
 	bool EntryBitBool(const wxString& var, bool value, const bool defvalue = false) override;
 	int EntryBitfield(const wxString& var, int value, const int defvalue = 0) override;

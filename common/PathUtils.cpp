@@ -101,7 +101,7 @@ bool wxDirName::Mkdir()
 //  Path namespace (wxFileName helpers)
 // ---------------------------------------------------------------------------------
 
-bool IsDirectoryWithinDirectory(fs::path base, fs::path dir)
+bool Path::IsDirectoryWithinDirectory(fs::path base, fs::path dir)
 {
 	fs::path relativePath = fs::relative(fs::absolute(dir), fs::absolute(base));
 	if (relativePath.empty())
