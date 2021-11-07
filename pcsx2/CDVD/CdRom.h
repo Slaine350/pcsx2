@@ -53,6 +53,8 @@ struct cdrStruct
 	u8 SetSector[4];
 	u8 SetSectorSeek[4];
 	u8 Track;
+	// Note. No$ describes this as random at start. 
+	u8 sixstep;
 	int Play;
 	int CurTrack;
 	int Mode, File, Channel, Muted;
@@ -80,7 +82,8 @@ u8 cdrRead1(void);
 u8 cdrRead2(void);
 u8 cdrRead3(void);
 void setPs1CDVDSpeed(int speed);
-s32 PlayXA(int channel);
+void interpolate(xa_decode_t buffer);
+s16 zigZagInterpolation(s16* ringbuff, s16* tableRow, int p);
 void cdrWrite0(u8 rt);
 void cdrWrite1(u8 rt);
 void cdrWrite2(u8 rt);

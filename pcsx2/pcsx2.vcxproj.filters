@@ -1630,6 +1630,10 @@
     <ClCompile Include="gui\pxWindowTextWriter.cpp">
       <Filter>AppHost</Filter>
     </ClCompile>
+    <ClCompile Include="GS\Renderers\SW\GSSetupPrimCodeGenerator.all.cpp" />
+    <ClCompile Include="CDVD\Decode_XA.cpp">
+      <Filter>System\Ps2\Iop\CDVD</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Patch.h">
@@ -2724,6 +2728,9 @@
     <ClInclude Include="gui\wxGuiTools.h" />
     <ClInclude Include="gui\pxStaticText.h">
       <Filter>AppHost</Filter>
+    </ClInclude>
+    <ClInclude Include="CDVD\Decode_XA.h">
+      <Filter>System\Ps2\Iop\CDVD</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
