@@ -30,8 +30,7 @@ enum cdrom_registers
 	CdlForward = 4,
 	CdlBackward = 5,
 	CdlReadN = 6,
-	//CdlMotorOn = 7,
-	CdlStandby = 7,
+	CdlMotorOn = 7,
 	CdlStop = 8,
 	CdlPause = 9,
 	CdlInit = 10,
@@ -91,6 +90,7 @@ u8 Test23[] = {0x43, 0x58, 0x44, 0x32, 0x39, 0x34, 0x30, 0x51};
 #define DiskError 5
 
 /* Modes flags */
+#define MODE_INIT (0 << 0)      // Init sets mode 00h or not all bits cleared
 #define MODE_SPEED (1 << 7)     // 0x80
 #define MODE_STRSND (1 << 6)    // 0x40 ADPCM on/off
 #define MODE_SIZE_2340 (1 << 5) // 0x20
@@ -253,10 +253,17 @@ void cdrInterrupt()
 			cdr.Stat = Complete;
 			break;
 
-		case CdlStandby:
+		case CdlMotorOn:
 			cdr.CmdProcess = 0;
 			SetResultSize(1);
-			cdr.StatP |= STATUS_ROTATING;
+			if (cdr.StatP & STATUS_ROTATING)
+			{
+				cdr.StatP |= STATUS_ERROR;
+			}
+			else
+			{
+				cdr.StatP |= STATUS_ROTATING;
+			}
 			cdr.Result[0] = cdr.StatP;
 			cdr.Stat = Complete;
 			break;
@@ -288,6 +295,7 @@ void cdrInterrupt()
 		case CdlInit:
 			SetResultSize(1);
 			cdr.StatP = STATUS_ROTATING;
+			cdr.Mode |= MODE_INIT;
 			cdr.Result[0] = cdr.StatP;
 			cdr.Stat = Acknowledge;
 			AddIrqQueue(CdlInit + 0x20, 0x800);
@@ -504,7 +512,7 @@ void cdrInterrupt()
 				return;
 
 			SetResultSize(1);
-			cdr.StatP |= STATUS_ROTATING;
+			cdr.StatP |= STATUS_READ;
 			cdr.Result[0] = cdr.StatP;
 			cdr.Stat = Acknowledge;
 
@@ -557,7 +565,7 @@ void cdrReadInterrupt()
 	SetResultSize(1);
 	if (cdr.StatP & STATUS_SEEK)
 		cdr.StatP &= ~STATUS_SEEK;
-	cdr.StatP |= STATUS_READ | STATUS_ROTATING;
+	cdr.StatP |= STATUS_READ;
 	cdr.Result[0] = cdr.StatP;
 
 	if (cdr.RErr == 0)
@@ -576,7 +584,7 @@ void cdrReadInterrupt()
 		memzero(cdr.Transfer);
 		cdr.Stat = DiskError;
 		cdr.StatP |= STATUS_ERROR;
-		//cdr.Result[0] |= STATUS_ERROR; // Why are we setting a flag that goes on StatP?
+		cdr.Result[0] = cdr.StatP;
 		ReadTrack();
 		CDREAD_INT((cdr.Mode & 0x80) ? (cdReadTime / 2) : cdReadTime);
 		return;
@@ -733,6 +741,7 @@ void cdrWrite1(u8 rt)
 			//StopReading();
 			// Setloc is memorizing the wanted target, and marks it as unprocessed, and has no other effect
 			// (it doesn't start reading or seeking, and doesn't interrupt or redirect any active reads).
+			// But it does set the seek target. This is used to set the target then seperately start the seek after setloc
 			int oldSector = msf_to_lsn(cdr.SetSector);
 			for (i = 0; i < 3; i++)
 				cdr.SetSector[i] = btoi(cdr.Param[i]);
@@ -757,11 +766,6 @@ void cdrWrite1(u8 rt)
 		break;
 		do_CdlPlay:
 		case CdlPlay:
-			// Taken from pcsxr
-			if (cdr.Reading)
-			{
-				StopReading();
-			}
 			if (cdr.SetlocPending)
 			{
 				memcpy(cdr.SetSectorSeek, cdr.SetSector, 4);
@@ -770,7 +774,9 @@ void cdrWrite1(u8 rt)
 			cdr.Play = 1;
 			cdr.Ctrl |= 0x80;
 			cdr.Stat = NoIntr;
-			AddIrqQueue(cdr.Cmd, 0x800);
+			// Play is almost identical to CdlReadS, believe it or not. The main difference is that this does not trigger a completed read IRQ
+			StartReading(2);
+			//AddIrqQueue(cdr.Cmd, 0x800);
 			break;
 
 		case CdlForward:
@@ -797,9 +803,7 @@ void cdrWrite1(u8 rt)
 			StartReading(1);
 			break;
 
-		case CdlStandby:
-			StopCdda();
-			StopReading();
+		case CdlMotorOn:
 			cdr.Ctrl |= 0x80;
 			cdr.Stat = NoIntr;
 			AddIrqQueue(cdr.Cmd, 0x800);
@@ -857,16 +861,16 @@ void cdrWrite1(u8 rt)
 			cdr.Mode = cdr.Param[0];
 			cdr.Ctrl |= 0x80;
 			cdr.Stat = NoIntr;
+			cdr.OldSpeed = cdr.Speed;
+			cdr.Speed = 1 + ((cdr.Mode >> 7) & 0x1);
 			if (cdr.Mode & MODE_CDDA)
 			{
 				StopCdda();
 				cdvd.Type = CDVD_TYPE_PSCDDA;
 			}
 
-			if (cdr.Mode & MODE_SPEED)
+			if (cdr.Mode & MODE_SPEED && cdr.OldSpeed != cdr.Speed)
 			{
-				// Should handle tick counts in here?
-				cdvd.Speed = 1 + ((cdr.Mode >> 7) & 0x1);
 				setPs1CDVDSpeed(cdvd.Speed);
 			}
 			AddIrqQueue(cdr.Cmd, 0x800);
@@ -935,10 +939,10 @@ void cdrWrite1(u8 rt)
 			break;
 
 		case CdlReadS:
-			if (cdvd.Type == CDVD_TYPE_PSCDDA) // Taken from pcsxr
-				goto do_CdlPlay;
 			cdr.Irq = 0;
 			StopReading();
+			if (cdvd.Type == CDVD_TYPE_PSCDDA) // Taken from pcsxr
+				goto do_CdlPlay;
 			cdr.Ctrl |= 0x80;
 			cdr.Stat = NoIntr;
 			StartReading(2);
@@ -1071,8 +1075,6 @@ void psxDma3(u32 madr, u32 bcr, u32 chcr)
 			if (cdr.Readed == 0)
 			{
 				DevCon.Warning("*** DMA 3 *** NOT READY");
-				HW_DMA3_CHCR &= ~0x01000000; //hack
-				psxDmaInterrupt(3);          //hack
 				return;
 			}
 
