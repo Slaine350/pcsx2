@@ -326,7 +326,7 @@ int GetPS2ElfName( wxString& name )
 
 		while( !file.eof() )
 		{
-			const wxString original( fromUTF8(file.readLine().c_str()) );
+			const wxString original( fromUTF8(file.readLine().c_str()).MakeUpper() );
 			const ParsedAssignmentString parts( original );
 
 			if( parts.lvalue.IsEmpty() && parts.rvalue.IsEmpty() ) continue;
