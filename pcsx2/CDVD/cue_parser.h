@@ -18,6 +18,8 @@ namespace CueParser {
 
 // "MSF" would be SetSector in the cdr struct
  using MSF = _cdvdSubQ;
+// LBA stands for Logical Block Addressing
+ using LBA = u32;
 
 enum : s32
 {
@@ -43,7 +45,7 @@ struct Track
   std::vector<std::pair<u32, MSF>> indices;
   cdvdTD mode;
   MSF start;
-  std::optional<MSF> length;
+  std::optional<u32> length;
   std::optional<MSF> zero_pregap;
 
   const MSF* GetIndex(u32 n) const;

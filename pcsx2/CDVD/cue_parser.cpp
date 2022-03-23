@@ -1,5 +1,6 @@
 #include "cue_parser.h"
 #include "common/StringUtil.h"
+#include "CDVDisoReader.h"
 #include <cstdarg>
 //Log_SetChannel(CueParser);
 
@@ -383,9 +384,9 @@ bool File::HandleFlagCommand(const char* line, u32 line_number, Common::Error* e
       m_current_track->SetFlag(TrackFlag::FourChannelAudio);
     else if (TokenMatch(token, "SCMS"))
       m_current_track->SetFlag(TrackFlag::SerialCopyManagement);
-    else
-      //Log_WarningPrintf("Unknown track flag '%*s'", static_cast<int>(token.size()), token.data());
   }
+    //else
+      //Log_WarningPrintf("Unknown track flag '%*s'", static_cast<int>(token.size()), token.data());
 
   return true;
 }
@@ -409,12 +410,12 @@ bool File::CompleteLastTrack(u32 line_number, Common::Error* error)
       continue;
 
     const MSF* prev_index = m_current_track->GetIndex(index_number - 1);
-    if (prev_index && *prev_index > index_msf)
+    /*if (prev_index && *prev_index > index_msf)
     {
       SetError(line_number, error, "Index %u is after index %u in track %u", index_number - 1, index_number,
                m_current_track->number);
       return false;
-    }
+    }*/
   }
 
   const MSF* index0 = m_current_track->GetIndex(0);
@@ -441,19 +442,22 @@ bool File::SetTrackLengths(u32 line_number, Common::Error* error)
       Track* previous_track = GetMutableTrack(track.number - 1);
       if (previous_track && previous_track->file == track.file)
       {
-        if (previous_track->start > track.start)
+        /*if (previous_track->start > track.start)
         {
           SetError(line_number, error, "Track %u start greater than track %u start", previous_track->number,
                    track.number);
           return false;
-        }
+        }*/
 
         // Use index 0, otherwise index 1.
         const MSF* start_index = track.GetIndex(0);
         if (!start_index)
           start_index = track.GetIndex(1);
 
-        previous_track->length = MSF::FromLBA(start_index->ToLBA() - previous_track->start.ToLBA());
+          //previous_track->length.emplace((u32)CDVDapi_Disc.readSubQ);
+
+        //previous_track->length = MSF::FromLBA(start_index->ToLBA() - previous_track->start.ToLBA());
+
       }
     }
   }
@@ -473,3 +477,9 @@ const CueParser::MSF* Track::GetIndex(u32 n) const
 }
 
 } // namespace CueParser
+
+CDVD_API CDVDapi_cue =
+{
+
+  
+}
