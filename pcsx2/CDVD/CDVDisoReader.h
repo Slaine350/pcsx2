@@ -19,5 +19,6 @@
 #include <stdio.h>
 
 #include "IsoFileFormats.h"
+#include "cue_parser.h"
 
 #endif

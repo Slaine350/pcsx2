@@ -29,8 +29,6 @@
 #include <cstring>
 #include <array>
 
-#include "cue_parser.h"
-
 static InputIsoFile iso;
 
 static int pmode, cdtype;
