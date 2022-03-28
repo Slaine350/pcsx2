@@ -58,11 +58,6 @@ ElfObject::ElfObject( const wxString& srcfile, uint hdrsize, bool isPSXElf )
 
 void ElfObject::initElfHeaders(bool isPSXElf)
 {
-	if (isPSXElf)
-	{
-		return;
-	}
-
 	DevCon.WriteLn( L"Initializing Elf: %d bytes", data.GetSizeInBytes());
 
 	if ( header.e_phnum > 0 )
