@@ -64,6 +64,7 @@ struct cdrStruct
 	u32 Reading;
 
 	cdvdTN ResultTN;
+	cdvdSubQ *subQ;
 	u8 ResultTD[4];
 	u8 SetSector[4];
 	u8 SetSectorSeek[4];

@@ -16,6 +16,7 @@
 #pragma once
 
 #include "CDVDaccess.h"
+#include "cue_parser.h"
 
 #include <string>
 #include <string_view>
@@ -181,3 +182,5 @@ extern s32 cdvdCtrlTrayOpen();
 extern s32 cdvdCtrlTrayClose();
 
 extern std::string DiscSerial;
+
+static CueParser::File* cueFile;
