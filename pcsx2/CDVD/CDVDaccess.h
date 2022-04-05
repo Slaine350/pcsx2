@@ -59,8 +59,9 @@ typedef struct _cdvdTN
 #define CDVD_MODE_2328 2 // skip sync+head+sub (24) bytes
 #define CDVD_MODE_2048 3 // skip sync+head+sub (24) bytes MODE1, MODE2Form1
 #define CDVD_MODE_2368 4 // full 2352 bytes + 16 subq
-#define CDVD_MODE2_FORM2 5
+#define CDVD_MODE_2342 5
 #define CDVD_MODE_2332 6
+#define CDVD_MODE_2336 7
 
 // CDVDgetDiskType returns:
 #define CDVD_TYPE_ILLEGAL 0xff   // Illegal Disc

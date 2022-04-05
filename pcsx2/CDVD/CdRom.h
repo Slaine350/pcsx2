@@ -69,6 +69,7 @@ struct cdrStruct
 	u8 SetSector[4];
 	u8 SetSectorSeek[4];
 	u8 Track;
+	s32 TrackToRead;
 	int Play;
 	int Speed;
 	int CurTrack;
