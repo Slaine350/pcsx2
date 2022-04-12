@@ -1,0 +1,30 @@
+--
+** User options **
+--dev / --devel : Build PCSX2 as a Development build.
+--debug         : Build PCSX2 as a Debug build.
+--prof          : Build PCSX2 as a Profiler build (release + debug symbol).
+--release       : Build PCSX2 as a Release build.
+
+--clean         : Do a clean build.
+--no-simd       : Only allow sse2
+
+** Distribution Compatibilities **
+--no-portaudio  : Skip portaudio for SPU2.
+--use-system-yaml  : Use system rapidyaml library
+
+** Expert Developer option **
+--gtk2          : use GTK 2 instead of GTK 3
+--no-trans      : Don't regenerate mo files when building.
+--clang         : Build with Clang/llvm
+--intel         : Build with ICC (Intel compiler)
+--lto           : Use Link Time Optimization
+--pgo-generate  : Executable will generate profiling information when run
+--pgo-optimize  : Use previously generated profiling information
+
+** Quality & Assurance (Please install the external tool) **
+--asan          : Enable Address sanitizer
+--clang-tidy    : Do a clang-tidy analysis. Results can be found in build directory
+--cppcheck      : Do a cppcheck analysis. Results can be found in build directory
+--coverity      : Do a build for coverity
+--vtune         : Plug GS with VTUNE
+--ftime-trace   : Analyse build time. Clang only.

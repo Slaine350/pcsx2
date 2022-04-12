@@ -19,6 +19,7 @@
 #include "IopHw.h"
 #include "IopDma.h"
 
+#include <regex>
 #include <memory>
 #include <ctype.h>
 #include <wx/datetime.h>
