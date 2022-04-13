@@ -374,7 +374,30 @@ bool DoCDVDopen()
 	//TODO_CDVD check if ISO and Disc use UTF8
 
 	auto CurrentSourceType = enum_cast(m_CurrentSourceType);
-	int ret = CDVD->open(!m_SourceFilename[CurrentSourceType].empty() ? m_SourceFilename[CurrentSourceType].c_str() : nullptr);
+
+	fs::path ext(m_SourceFilename[CurrentSourceType]);
+
+	Common::Error *err;
+
+	if (ext.extension() == ".bin")
+	{
+		ext.replace_extension(".cue");
+	}
+	if (fs::exists(ext) && ext.extension() == ".cue")
+	{
+		if (!cueFile)
+			cueFile = new CueParser::File();
+
+		FILE* file = fopen(ext.string().c_str(), "r+");
+		if (file != nullptr)
+		{
+			cueFile->Parse(file, err);
+			ext = ext.parent_path() / cueFile->GetTrack(1)->filePath;
+			Console.DoWriteLn(L"CUE FILE NAME: " + ext.wstring() + '\n');
+		}
+	}
+
+	int ret = CDVD->open(!ext.empty() ? ext.string().c_str() : nullptr);
 	if (ret == -1)
 		return false; // error! (handled by caller)
 
