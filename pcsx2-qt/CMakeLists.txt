@@ -4,8 +4,8 @@ set(CMAKE_AUTOUIC ON)
 
 add_executable(pcsx2-qt)
 
-if (PACKAGE_MODE)
-	message(FATAL_ERROR "Package mode is not supported for Qt builds.")
+if(PACKAGE_MODE)
+	install(TARGETS pcsx2-qt DESTINATION ${CMAKE_INSTALL_BINDIR})
 else()
 	install(TARGETS pcsx2-qt DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 endif()
