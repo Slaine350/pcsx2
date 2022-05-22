@@ -914,6 +914,16 @@ bool Host::AcquireHostDisplay(HostDisplay::RenderAPI api)
 void Host::ReleaseHostDisplay()
 {
 	g_emu_thread->releaseHostDisplay();
+
+#ifdef __APPLE__
+	// On macOS, this is in the bundle resources directory.
+	EmuFolders::Resources = Path::Canonicalize(Path::Combine(EmuFolders::AppRoot, "../Resources"));
+#elif !defined(PCSX2_APP_DATADIR)
+	// On Windows/Linux, these are in the binary directory.
+	EmuFolders::Resources = Path::Combine(EmuFolders::AppRoot, "resources");
+#else
+	EmuFolders::Resources = Path::Canonicalize(Path::Combine(EmuFolders::AppRoot, PCSX2_APP_DATADIR "/resources"));
+#endif
 }
 
 bool Host::BeginPresentFrame(bool frame_skip)
