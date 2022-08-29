@@ -15,6 +15,9 @@ set(TOP_CMAKE_WAS_SOURCED TRUE)
 # set module path
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 
+#set executable name
+set(EXECUTEABLE "pcsx2")
+
 # include some generic functions to ensure correctness of the env
 include(Pcsx2Utils)
 
@@ -66,6 +69,13 @@ if(PACKAGE_MODE)
 	else()
 		set(PCSX2_MENU_CATEGORIES "Game;Emulator;")
 	endif()
+
+	if(QT_BUILD)
+		set(EXECUTEABLE "pcsx2-qt")
+	else()
+		set(EXECUTEABLE "pcsx2")
+	endif()
+
 	configure_file("${CMAKE_SOURCE_DIR}/linux_various/PCSX2.desktop.in" "${CMAKE_BINARY_DIR}/linux_various/PCSX2.desktop" @ONLY)
 
 	INSTALL(FILES "${CMAKE_BINARY_DIR}/linux_various/PCSX2.desktop" DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/applications")
