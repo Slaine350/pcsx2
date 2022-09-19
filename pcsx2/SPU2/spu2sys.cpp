@@ -823,7 +823,8 @@ void V_Core::WriteRegPS1(u32 mem, u16 value)
 				break;
 
 			case 0x1DB0: // 1F801DB0h 4  CD Volume Left/Right
-				break;   // cd left?
+				ExtVol = value;
+				break;
 			case 0x1DB2:
 				break;   // cd right?
 			case 0x1DB4: // 1F801DB4h 4  Extern Volume Left / Right

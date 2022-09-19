@@ -87,6 +87,8 @@ struct cdrStruct
 
 extern cdrStruct cdr;
 
+static std::vector<s32> audioBuffer[2];
+
 void cdrReset();
 void cdrInterrupt();
 void cdrReadInterrupt();

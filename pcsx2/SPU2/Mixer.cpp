@@ -17,6 +17,8 @@
 #include "Global.h"
 #include "common/Assertions.h"
 
+#include "CDVD/Ps1CD.h"
+
 void ADMAOutLogWrite(void* lpData, u32 ulSize);
 
 #include "interpolate_table.h"
@@ -749,6 +751,18 @@ StereoOut32 V_Core::Mix(const VoiceMixSet& inVoices, const StereoOut32& Input, c
 // used to throttle the output rate of cache stat reports
 static int p_cachestat_counter = 0;
 
+static void GrabCDAudio(StereoOut32& core0)
+{
+	if (audioBuffer->size() > 0)
+	{
+		core0.Left += audioBuffer[0][0];
+		audioBuffer[0].pop_back();
+
+		core0.Right += audioBuffer[1][0];
+		audioBuffer[1].pop_back();
+	}
+}
+
 // Gcc does not want to inline it when lto is enabled because some functions growth too much.
 // The function is big enought to see any speed impact. -- Gregory
 #ifndef __POSIX__
@@ -811,6 +825,8 @@ __forceinline
 		
 		
 	}
+
+	GrabCDAudio(Out);
 
 	// Configurable output volume
 	Out.Left *= FinalVolume;

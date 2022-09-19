@@ -23,6 +23,8 @@
 #include <mutex>
 #include <array>
 
+#include "CDVDcommon.h"
+
 extern u8 strack;
 extern u8 etrack;
 extern cdvdTrack tracks[100];
