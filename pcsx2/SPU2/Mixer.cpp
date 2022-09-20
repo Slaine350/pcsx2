@@ -753,13 +753,15 @@ static int p_cachestat_counter = 0;
 
 static void GrabCDAudio(StereoOut32& core0)
 {
-	if (audioBuffer->size() > 0)
+	if (audioBuffer.size() > 0)
 	{
-		core0.Left += audioBuffer[0][0];
-		audioBuffer[0].pop_back();
+		core0.Left = audioBuffer.front() << SndOutVolumeShift;
+		Console.Warning("Sample Left: %d", audioBuffer.front());
+		audioBuffer.pop();
 
-		core0.Right += audioBuffer[1][0];
-		audioBuffer[1].pop_back();
+		core0.Right = audioBuffer.front() << SndOutVolumeShift;
+		Console.Warning("Sample Right: %d", audioBuffer.front());
+		audioBuffer.pop();
 	}
 }
 

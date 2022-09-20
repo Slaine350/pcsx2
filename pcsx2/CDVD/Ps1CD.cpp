@@ -82,6 +82,8 @@ u8 Test20[] = {0x98, 0x06, 0x10, 0xC3};
 u8 Test22[] = {0x66, 0x6F, 0x72, 0x20, 0x45, 0x75, 0x72, 0x6F};
 u8 Test23[] = {0x43, 0x58, 0x44, 0x32, 0x39, 0x34, 0x30, 0x51};
 
+std::queue<s32> audioBuffer;
+
 //backported from PCSXR
 // cdr.Stat:
 #define NoIntr 0
@@ -366,7 +368,7 @@ void cdrInterrupt()
 		case CdlGetlocP:
 			SetResultSize(8);
 			cdr.subQ = new cdvdSubQ();
-			CDVD->readSubQ(*cdr.SetSector, cdr.subQ);
+			CDVD->readSubQ(msf_to_lsn(cdr.SetSector), cdr.subQ);
 			if (cdr.subQ->trackNum > 0)
 			{
 				cdr.Result[0] = cdr.subQ->trackNum;
@@ -703,6 +705,30 @@ void setPs1CDVDSpeed(int speed)
 	//Console.Warning(L"cdReadTime: %d", unsigned(cdReadTime));
 }
 
+void processCDDA()
+{
+	int numSamples = 2352 / 16 / 2;
+
+	//Console.Warning("Numsamples: ", numSamples);
+
+	for (int i = 0; i < numSamples; i++)
+	{
+		//audioBuffer[0].push_back(static_cast<s32>(*sector));
+		//audioBuffer[1].push_back(static_cast<s32>(*sector + sizeof(s16)));
+
+		//Console.Warning("Sample Left: %d", audioBuffer[0][i]);
+		//Console.Warning("Sample Right: %d", audioBuffer[1][i]);
+
+    s16 samp_left, samp_right;
+    std::memcpy(&samp_left, cdr.pTransfer, sizeof(samp_left));
+    std::memcpy(&samp_right, cdr.pTransfer + sizeof(s16), sizeof(samp_right));
+	audioBuffer.push(static_cast<s32>(samp_left));
+	audioBuffer.push(static_cast<s32>(samp_right));
+	cdr.pTransfer += sizeof(s16) * 2;
+	}
+
+}
+
 u8 cdrRead1(void)
 {
 	if (cdr.ResultReady && cdr.Ctrl & 0x1)
@@ -794,8 +820,12 @@ void cdrWrite1(u8 rt)
 			cdr.Play = 1;
 			cdr.Ctrl |= 0x80;
 			cdr.Stat = NoIntr;
+			cdr.StatP |= STATUS_PLAY;
 			// Play is almost identical to CdlReadS, believe it or not. The main difference is that this does not trigger a completed read IRQ
-			StartReading(2);
+			ReadTrack();
+
+			cdr.pTransfer = cdr.Transfer;
+			processCDDA();
 			AddIrqQueue(cdr.Cmd, 0x800);
 			break;
 

@@ -17,6 +17,8 @@
 
 #include "CDVDcommon.h"
 
+#include <queue>
+
 // Not used.
 typedef struct
 {
@@ -87,9 +89,10 @@ struct cdrStruct
 
 extern cdrStruct cdr;
 
-static std::vector<s32> audioBuffer[2];
+extern std::queue<s32> audioBuffer;
 
 void cdrReset();
+void processCDDA();
 void cdrInterrupt();
 void cdrReadInterrupt();
 u8 cdrRead0(void);
