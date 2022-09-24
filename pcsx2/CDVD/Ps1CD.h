@@ -89,7 +89,7 @@ struct cdrStruct
 
 extern cdrStruct cdr;
 
-extern std::queue<s32> audioBuffer;
+extern std::queue<s16> audioBuffer;
 
 void cdrReset();
 void processCDDA();

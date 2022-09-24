@@ -751,17 +751,19 @@ StereoOut32 V_Core::Mix(const VoiceMixSet& inVoices, const StereoOut32& Input, c
 // used to throttle the output rate of cache stat reports
 static int p_cachestat_counter = 0;
 
-static void GrabCDAudio(StereoOut32& core0)
+static void GrabCDAudio()
 {
+	StereoOut16 core;
 	if (audioBuffer.size() > 0)
 	{
-		core0.Left = audioBuffer.front() << SndOutVolumeShift;
+		core.Left += (audioBuffer.front() << SndOutVolumeShift);
 		Console.Warning("Sample Left: %d", audioBuffer.front());
 		audioBuffer.pop();
 
-		core0.Right = audioBuffer.front() << SndOutVolumeShift;
+		core.Right += (audioBuffer.front() << SndOutVolumeShift);
 		Console.Warning("Sample Right: %d", audioBuffer.front());
 		audioBuffer.pop();
+		SndBuffer::Write(core);
 	}
 }
 
@@ -828,7 +830,7 @@ __forceinline
 		
 	}
 
-	GrabCDAudio(Out);
+	GrabCDAudio();
 
 	// Configurable output volume
 	Out.Left *= FinalVolume;

@@ -82,7 +82,7 @@ u8 Test20[] = {0x98, 0x06, 0x10, 0xC3};
 u8 Test22[] = {0x66, 0x6F, 0x72, 0x20, 0x45, 0x75, 0x72, 0x6F};
 u8 Test23[] = {0x43, 0x58, 0x44, 0x32, 0x39, 0x34, 0x30, 0x51};
 
-std::queue<s32> audioBuffer;
+std::queue<s16> audioBuffer;
 
 //backported from PCSXR
 // cdr.Stat:
@@ -713,18 +713,9 @@ void processCDDA()
 
 	for (int i = 0; i < numSamples; i++)
 	{
-		//audioBuffer[0].push_back(static_cast<s32>(*sector));
-		//audioBuffer[1].push_back(static_cast<s32>(*sector + sizeof(s16)));
-
-		//Console.Warning("Sample Left: %d", audioBuffer[0][i]);
-		//Console.Warning("Sample Right: %d", audioBuffer[1][i]);
-
-    s16 samp_left, samp_right;
-    std::memcpy(&samp_left, cdr.pTransfer, sizeof(samp_left));
-    std::memcpy(&samp_right, cdr.pTransfer + sizeof(s16), sizeof(samp_right));
-	audioBuffer.push(static_cast<s32>(samp_left));
-	audioBuffer.push(static_cast<s32>(samp_right));
-	cdr.pTransfer += sizeof(s16) * 2;
+		audioBuffer.push(*cdr.pTransfer);
+		audioBuffer.push(*cdr.pTransfer + sizeof(s16));
+		cdr.pTransfer += sizeof(s16) * 2;
 	}
 
 }
@@ -812,6 +803,7 @@ void cdrWrite1(u8 rt)
 		}
 		break;
 		case CdlPlay:
+			// Play is almost identical to CdlReadS, believe it or not. The main difference is that this does not trigger a completed read IRQ
 			if (cdr.SetlocPending)
 			{
 				memcpy(cdr.SetSectorSeek, cdr.SetSector, 4);
@@ -821,9 +813,7 @@ void cdrWrite1(u8 rt)
 			cdr.Ctrl |= 0x80;
 			cdr.Stat = NoIntr;
 			cdr.StatP |= STATUS_PLAY;
-			// Play is almost identical to CdlReadS, believe it or not. The main difference is that this does not trigger a completed read IRQ
-			ReadTrack();
-
+			StartReading(2);
 			cdr.pTransfer = cdr.Transfer;
 			processCDDA();
 			AddIrqQueue(cdr.Cmd, 0x800);
