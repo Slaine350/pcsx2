@@ -99,7 +99,7 @@ bool cdvdUpdateDiscStatus()
 	return !ready;
 }
 
-cdvdSubQ *cdvdReadSubQ(u32 lsn)
+cdvdSubQ cdvdReadSubQ(u32 lsn)
 {
 	cdvdSubQ subq;
 
@@ -108,14 +108,14 @@ cdvdSubQ *cdvdReadSubQ(u32 lsn)
 	|| curDiskType == CDVD_TYPE_DETCTCD || curDiskType == CDVD_TYPE_CDDA)
 	{
 		cdvdCacheFetch(lsn, nullptr, &subq);
-		if (subq.trackNum <= 0)
+		if (subq.trackNum == 0)
 		{
 			Console.WriteLn("Read SubQ");
 			if (!src->ReadSubChannelQ(lsn, &subq))
 			{
 				// If real subQ read fails. Let's fake till we make it!
 				if (lsn >= src->GetSectorCount())
-					return nullptr;
+					return cdvdSubQ{};
 
 				lsn_to_msf(&subq.discM, &subq.discS, &subq.discF, lsn + 150);
 
@@ -134,7 +134,7 @@ cdvdSubQ *cdvdReadSubQ(u32 lsn)
 			}
 		}
 	}
-	return &subq;
+	return subq;
 }
 
 void cdvdThread()
@@ -191,7 +191,16 @@ void cdvdThread()
 		{
 			if (cdvdReadBlockOfSectors(request_lsn, buffer))
 			{
-				cdvdCacheUpdate(request_lsn, buffer, cdvdReadSubQ(request_lsn));
+				cdvdSubQ subq = cdvdReadSubQ(request_lsn);
+				Console.Error("SubQ Track: %d", subq.trackNum);
+				if (subq.trackNum > 0)
+				{
+					cdvdCacheUpdate(request_lsn, buffer, &subq);
+				}
+				else
+				{
+					cdvdCacheUpdate(request_lsn, buffer);
+				}
 			}
 			else
 			{
@@ -280,7 +289,16 @@ u8* cdvdGetSector(u32 sector, s32 mode)
 	{
 		if (cdvdReadBlockOfSectors(sector_block, buffer))
 		{
-			cdvdCacheUpdate(sector_block, buffer, cdvdReadSubQ(sector_block));
+			cdvdSubQ subq = cdvdReadSubQ(sector_block);
+			Console.Error("SubQ Track: %d", subq.trackNum);
+			if (subq.trackNum > 0)
+			{
+				cdvdCacheUpdate(sector_block, buffer, &subq);
+			}
+			else
+			{
+				cdvdCacheUpdate(sector_block, buffer);
+			}
 		}
 	}
 	if (src->GetMediaType() >= 0)

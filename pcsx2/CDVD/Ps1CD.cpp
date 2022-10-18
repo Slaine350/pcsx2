@@ -210,6 +210,12 @@ static void ReadTrack()
 	cdr.Prev[1] = itob(cdr.SetSector[1]);
 	cdr.Prev[2] = itob(cdr.SetSector[2]);
 
+	cdvdSubQ subQ;
+	if (CDVD->getSubQ(msf_to_lsn(cdr.SetSector), &subQ))
+	{
+		cdr.subQ = subQ;
+	}
+
 	CDVD_LOG("KEY *** %x:%x:%x", cdr.Prev[0], cdr.Prev[1], cdr.Prev[2]);
 	if (EmuConfig.CdvdVerboseReads)
 		DevCon.WriteLn("CD Read Sector %x", msf_to_lsn(cdr.SetSector));
@@ -397,29 +403,15 @@ void cdrInterrupt()
 
 		case CdlGetlocP:
 			SetResultSize(8);
-			if (CDVD->readSubQ(msf_to_lsn(cdr.SetSector), &cdr.subQ) >= 0)
-			{
-				cdr.Result[0] = cdr.subQ.trackNum;
-				cdr.Result[1] = cdr.subQ.trackIndex;
-				cdr.Result[2] = cdr.subQ.trackM;
-				cdr.Result[3] = cdr.subQ.trackS;
-				cdr.Result[4] = cdr.subQ.trackF;
-				cdr.Result[5] = cdr.subQ.discM;
-				cdr.Result[6] = cdr.subQ.discS;
-				cdr.Result[7] = cdr.subQ.discF;
-			}
-			else
-			{
-				cdr.Result[0] = 1;
-				cdr.Result[1] = 1;
-				cdr.Result[2] = cdr.Prev[0];
-				cdr.Result[3] = itob((btoi(cdr.Prev[1])) - 2);
-				cdr.Result[4] = cdr.Prev[2];
-				cdr.Result[5] = cdr.Prev[0];
-				cdr.Result[6] = cdr.Prev[1];
-				cdr.Result[7] = cdr.Prev[2];
-			}
-
+			cdr.Result[0] = cdr.subQ.trackNum;
+			cdr.Result[1] = cdr.subQ.trackIndex;
+			cdr.Result[2] = cdr.subQ.trackM;
+			cdr.Result[3] = cdr.subQ.trackS;
+			cdr.Result[4] = cdr.subQ.trackF;
+			cdr.Result[5] = cdr.subQ.discM;
+			cdr.Result[6] = cdr.subQ.discS;
+			cdr.Result[7] = cdr.subQ.discF;
+			
 			Console.Warning("SubQ TrackNum: %d", cdr.Result[0]);
 			Console.Warning("SubQ TrackIndex: %d", cdr.Result[1]);
 			Console.Warning("SubQ TrackM: %d", cdr.Result[2]);
@@ -428,7 +420,6 @@ void cdrInterrupt()
 			Console.Warning("SubQ DiscM: %d", cdr.Result[5]);
 			Console.Warning("SubQ DiscS: %d", cdr.Result[6]);
 			Console.Warning("SubQ DiscF: %d", cdr.Result[7]);
-
 			cdr.Stat = Acknowledge;
 			break;
 

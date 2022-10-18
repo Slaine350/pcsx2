@@ -20,6 +20,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+
 // The aio module has been reported to cause issues with FreeBSD 10.3, so let's
 // disable it for 10.3 and earlier and hope FreeBSD 11 and onwards is fine.
 // Note: It may be worth checking whether aio provides any performance benefit.
@@ -46,8 +47,13 @@ bool FlatFileReader::Open(std::string fileName)
 
     m_fd = FileSystem::OpenFDFile(m_filename.c_str(), O_RDONLY, 0);
 
+<<<<<<< HEAD
     cdvdCacheReset();
     return (m_fd != -1);
+=======
+	cdvdCacheReset();
+	return (m_fd != -1);
+>>>>>>> 93622231b (IOCtlSrc: Restore SubQ reads)
 }
 
 int FlatFileReader::ReadSync(void* pBuffer, uint sector, uint count)

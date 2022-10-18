@@ -256,29 +256,21 @@ s32 CALLBACK DISCgetBuffer(u8* dest)
 
 s32 CALLBACK DISCgetSubQ(u32 lsn, cdvdSubQ* subq)
 {
-	// the formatted subq command returns:  control/adr, track, index, trk min, trk sec, trk frm, 0x00, abs min, abs sec, abs frm
-
-	if (lsn >= src->GetSectorCount())
-		return -1;
-
-	memset(subq, 0, sizeof(cdvdSubQ));
-
-	lsn_to_msf(&subq->discM, &subq->discS, &subq->discF, lsn + 150);
-
-	u8 i = strack;
-	while (i < etrack && lsn >= tracks[i + 1].startLba)
-		++i;
-
-	lsn -= tracks[i].startLba;
-
-	lsn_to_msf(&subq->trackM, &subq->trackS, &subq->trackF, lsn);
-
-	subq->mode = 1;
-	subq->ctrl = tracks[i].type;
-	subq->trackNum = i;
-	subq->trackIndex = 1;
-
-	return 0;
+	cdvdCacheFetch(lsn, nullptr, subq);
+	if (subq->trackNum > 0)
+	{
+		// the formatted subq command returns:  control/adr, track, index, trk min, trk sec, trk frm, 0x00, abs min, abs sec, abs frm
+		Console.WriteLn("SubQ track: %d", subq->trackNum);
+		Console.WriteLn("SubQ discM: %d", subq->discM);
+		Console.WriteLn("SubQ discS: %d", subq->discS);
+		Console.WriteLn("SubQ discF: %d", subq->discF);
+		Console.WriteLn("SubQ trackM: %d", subq->trackM);
+		Console.WriteLn("SubQ trackS: %d", subq->trackS);
+		Console.WriteLn("SubQ trackF: %d", subq->trackF);
+		return 0;
+	}
+	Console.Error("Error: SubQ Empty");
+	return -1;
 }
 
 s32 CALLBACK DISCgetTN(cdvdTN* Buffer)

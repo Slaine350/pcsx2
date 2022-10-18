@@ -29,6 +29,7 @@
 #include <cstddef>
 #include <cstdlib>
 #include <stdexcept>
+#include <bitset>
 
 IOCtlSrc::IOCtlSrc(std::string filename)
 	: m_filename(std::move(filename))

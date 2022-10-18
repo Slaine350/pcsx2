@@ -93,7 +93,7 @@ void cdvdStopThread();
 void cdvdRequestSector(u32 sector, s32 mode);
 u8* cdvdGetSector(u32 sector, s32 mode);
 s32 cdvdDirectReadSector(u32 sector, s32 mode, u8* buffer);
-cdvdSubQ *cdvdReadSubQ(u32 sector);
+cdvdSubQ cdvdReadSubQ(u32 sector);
 s32 cdvdGetMediaType();
 s32 cdvdRefreshData();
 void cdvdParseTOC();
