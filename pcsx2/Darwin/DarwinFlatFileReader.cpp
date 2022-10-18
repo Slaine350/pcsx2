@@ -16,8 +16,10 @@
 #include "PrecompiledHeader.h"
 #include "AsyncFileReader.h"
 #include "common/FileSystem.h"
+#include "CDVD/CDVDcommon.h"
 #include <unistd.h>
 #include <fcntl.h>
+
 
 // The aio module has been reported to cause issues with FreeBSD 10.3, so let's
 // disable it for 10.3 and earlier and hope FreeBSD 11 and onwards is fine.
@@ -45,6 +47,7 @@ bool FlatFileReader::Open(std::string fileName)
 
     m_fd = FileSystem::OpenFDFile(m_filename.c_str(), O_RDONLY, 0);
 
+	cdvdCacheReset();
 	return (m_fd != -1);
 }
 
