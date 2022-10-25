@@ -216,12 +216,6 @@ static void ReadTrack()
 	cdr.Prev[1] = itob(cdr.SetSector[1]);
 	cdr.Prev[2] = itob(cdr.SetSector[2]);
 
-	cdvdSubQ subQ;
-	if (CDVD->getSubQ(msf_to_lsn(cdr.SetSector), &subQ))
-	{
-		cdr.subQ = subQ;
-	}
-
 	CDVD_LOG("KEY *** %x:%x:%x", cdr.Prev[0], cdr.Prev[1], cdr.Prev[2]);
 	if (EmuConfig.CdvdVerboseReads)
 		DevCon.WriteLn("CD Read Sector %x", msf_to_lsn(cdr.SetSector));
@@ -417,15 +411,6 @@ void cdrInterrupt()
 			cdr.Result[5] = cdr.subQ.discM;
 			cdr.Result[6] = cdr.subQ.discS;
 			cdr.Result[7] = cdr.subQ.discF;
-			
-			Console.Warning("SubQ TrackNum: %d", cdr.Result[0]);
-			Console.Warning("SubQ TrackIndex: %d", cdr.Result[1]);
-			Console.Warning("SubQ TrackM: %d", cdr.Result[2]);
-			Console.Warning("SubQ TrackS: %d", cdr.Result[3]);
-			Console.Warning("SubQ TrackF: %d", cdr.Result[4]);
-			Console.Warning("SubQ DiscM: %d", cdr.Result[5]);
-			Console.Warning("SubQ DiscS: %d", cdr.Result[6]);
-			Console.Warning("SubQ DiscF: %d", cdr.Result[7]);
 			cdr.Stat = Acknowledge;
 			break;
 
@@ -679,6 +664,7 @@ void cdrReadInterrupt()
 		CDREAD_INT((cdr.Mode & 0x80) ? (cdReadTime / 2) : cdReadTime);
 	}
 
+	CDVD->getSubQ(msf_to_lsn(cdr.SetSector), &cdr.subQ);
 	psxHu32(0x1070) |= 0x4;
 	return;
 }
