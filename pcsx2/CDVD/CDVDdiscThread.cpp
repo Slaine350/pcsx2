@@ -192,7 +192,6 @@ void cdvdThread()
 			if (cdvdReadBlockOfSectors(request_lsn, buffer))
 			{
 				cdvdSubQ subq = cdvdReadSubQ(request_lsn);
-				Console.Error("SubQ Track: %d", subq.trackNum);
 				if (subq.trackNum > 0)
 				{
 					cdvdCacheUpdate(request_lsn, buffer, &subq);
@@ -290,7 +289,6 @@ u8* cdvdGetSector(u32 sector, s32 mode)
 		if (cdvdReadBlockOfSectors(sector_block, buffer))
 		{
 			cdvdSubQ subq = cdvdReadSubQ(sector_block);
-			Console.Error("SubQ Track: %d", subq.trackNum);
 			if (subq.trackNum > 0)
 			{
 				cdvdCacheUpdate(sector_block, buffer, &subq);

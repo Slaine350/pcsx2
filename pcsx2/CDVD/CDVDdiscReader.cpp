@@ -269,7 +269,6 @@ s32 CALLBACK DISCgetSubQ(u32 lsn, cdvdSubQ* subq)
 		Console.WriteLn("SubQ trackF: %d", subq->trackF);
 		return 0;
 	}
-	Console.Error("Error: SubQ Empty");
 	return -1;
 }
 
