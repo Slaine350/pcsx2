@@ -26,6 +26,8 @@
 #include <memory>
 #include <string>
 
+#include "CDVD/CDVDcommon.h"
+
 class AsyncFileReader
 {
 protected:
@@ -46,6 +48,7 @@ public:
 	virtual void BeginRead(void* pBuffer, uint sector, uint count)=0;
 	virtual int FinishRead(void)=0;
 	virtual void CancelRead(void)=0;
+	virtual cdvdSubQ * ReadSubQ(uint lsn)=0;
 
 	virtual void Close(void)=0;
 
@@ -96,6 +99,7 @@ public:
 	virtual void BeginRead(void* pBuffer, uint sector, uint count) override;
 	virtual int FinishRead(void) override;
 	virtual void CancelRead(void) override;
+	virtual cdvdSubQ * ReadSubQ(uint lsn) override;
 
 	virtual void Close(void) override;
 
@@ -133,6 +137,7 @@ public:
 	virtual void BeginRead(void* pBuffer, uint sector, uint count) override;
 	virtual int FinishRead(void) override;
 	virtual void CancelRead(void) override;
+	virtual cdvdSubQ * ReadSubQ(uint lsn) override;
 
 	virtual void Close(void) override;
 
@@ -170,6 +175,7 @@ public:
 	virtual void BeginRead(void* pBuffer, uint sector, uint count) override;
 	virtual int FinishRead(void) override;
 	virtual void CancelRead(void) override;
+	virtual cdvdSubQ * ReadSubQ(uint lsn) override;
 
 	virtual void Close(void) override;
 

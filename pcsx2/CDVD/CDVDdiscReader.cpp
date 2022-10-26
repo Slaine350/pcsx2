@@ -33,7 +33,6 @@ static std::thread s_keepalive_thread;
 
 u8 strack;
 u8 etrack;
-cdvdTrack tracks[100];
 
 int curDiskType;
 int curTrayStatus;

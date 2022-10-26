@@ -40,16 +40,6 @@
 
 CDVD_API* CDVD = NULL;
 
-// ----------------------------------------------------------------------------
-// diskTypeCached
-// Internal disc type cache, to reduce the overhead of disc type checks, which are
-// performed quite liberally by many games (perhaps intended to keep the PS2 DVD
-// from spinning down due to idle activity?).
-// Cache is set to -1 for init and when the disc is removed/changed, which invokes
-// a new DiskTypeCheck.  All subsequent checks use the non-negative value here.
-//
-static int diskTypeCached = -1;
-
 // used to bridge the gap between the old getBuffer api and the new getBuffer2 api.
 int lastReadSize;
 u32 lastLSN; // needed for block dumping

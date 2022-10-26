@@ -113,6 +113,7 @@ public:
 	void BeginRead(void* pBuffer, uint sector, uint count) final override;
 	int FinishRead(void) final override;
 	void CancelRead(void) final override;
+	cdvdSubQ *ReadSubQ(uint lsn) override;
 	void Close(void) final override;
 	void SetBlockSize(uint bytes) final override;
 	void SetDataOffset(int bytes) final override;

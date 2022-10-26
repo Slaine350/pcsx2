@@ -44,12 +44,20 @@ bool FlatFileReader::Open(std::string fileName)
 
 	m_fd = FileSystem::OpenFDFile(m_filename.c_str(), O_RDONLY, 0);
 
+	cdvdCacheReset();
+
 	return (m_fd != -1);
 }
 
 int FlatFileReader::ReadSync(void* pBuffer, uint sector, uint count)
 {
-	BeginRead(pBuffer, sector, count);
+	u8 buffer[2352 * sectors_per_read];
+	if (!cdvdCacheFetch(sector, buffer))
+	{
+		BeginRead(buffer, sector, count);
+		cdvdCacheUpdate(sector, buffer, ReadSubQ(sector));
+	}
+	memcpy(pBuffer, buffer, sizeof(pBuffer));
 	return FinishRead();
 }
 
@@ -84,6 +92,41 @@ void FlatFileReader::CancelRead(void)
 	// Note: io_cancel exists but need the iocb structure as parameter
 	// int io_cancel(aio_context_t ctx_id, struct iocb *iocb,
 	//                struct io_event *result);
+}
+
+cdvdSubQ *FlatFileReader::ReadSubQ(uint lsn)
+{
+	cdvdSubQ *subq;
+
+	if (diskTypeCached == CDVD_TYPE_PSCD || diskTypeCached == CDVD_TYPE_PSCDDA
+	|| diskTypeCached == CDVD_TYPE_PS2CD || diskTypeCached == CDVD_TYPE_PS2CDDA
+	|| diskTypeCached == CDVD_TYPE_DETCTCD || diskTypeCached == CDVD_TYPE_CDDA)
+	{
+		cdvdCacheFetch(lsn, nullptr, subq);
+		if (subq == nullptr)
+		{
+			subq = new cdvdSubQ();
+			// fake it
+			u8 min, sec, frm;
+			subq->ctrl = 4;
+			subq->mode = 1;
+			subq->trackNum = itob(1);
+			subq->trackIndex = itob(1);
+
+			lba_to_msf(lsn, &min, &sec, &frm);
+			subq->trackM = itob(min);
+			subq->trackS = itob(sec);
+			subq->trackF = itob(frm);
+
+			subq->pad = 0;
+
+			lba_to_msf(lsn + (2 * 75), &min, &sec, &frm);
+			subq->discM = itob(min);
+			subq->discS = itob(sec);
+			subq->discF = itob(frm);
+		}
+	}
+	return subq;
 }
 
 void FlatFileReader::Close(void)

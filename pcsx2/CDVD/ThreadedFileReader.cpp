@@ -365,6 +365,11 @@ void ThreadedFileReader::CancelRead(void)
 		m_condition.wait(lock);
 }
 
+cdvdSubQ *ThreadedFileReader::ReadSubQ(uint lsn)
+{
+	return nullptr;
+}
+
 void ThreadedFileReader::Close(void)
 {
 	CancelAndWaitUntilStopped();

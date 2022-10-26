@@ -42,6 +42,7 @@ public:
 	virtual void BeginRead(void* pBuffer, uint sector, uint count);
 	virtual int FinishRead(void);
 	virtual void CancelRead(void){};
+	virtual cdvdSubQ * ReadSubQ(uint lsn) override;
 
 	virtual void Close(void);
 
