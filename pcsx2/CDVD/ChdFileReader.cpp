@@ -13,6 +13,8 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <sstream>
+
 #include "PrecompiledHeader.h"
 #include "ChdFileReader.h"
 
@@ -20,6 +22,7 @@
 #include "common/FileSystem.h"
 #include "common/Path.h"
 #include "common/StringUtil.h"
+#include "CDVD/CDVDcommon.h"
 
 ChdFileReader::~ChdFileReader()
 {
@@ -50,6 +53,34 @@ static chd_error chd_open_wrapper(const char* filename, std::FILE** fp, int mode
 	std::fclose(*fp);
 	*fp = nullptr;
 	return err;
+}
+
+inline std::vector<std::string> parse(std::string buff, std::string delim)
+{
+	::std::vector<::std::string> parsed;
+	::std::string::size_type pos = 0;
+
+	std::vector<::std::string> tokens;
+	std::stringstream stream(delim);
+
+	std::string inter;
+	while (getline(stream, inter, ' '))
+	{
+		tokens.push_back(inter);
+	}
+
+	stream.clear();
+	stream.str(buff);
+	int i = 0;
+	while (getline(stream, inter, ' '))
+	{
+		std::string token = tokens[i];
+		parsed.push_back(inter.substr(token.length() - 2));
+		i++;
+	}
+
+
+	return parsed;
 }
 
 bool ChdFileReader::Open2(std::string fileName)
@@ -150,7 +181,83 @@ bool ChdFileReader::Open2(std::string fileName)
 	// The rest of PCSX2 likes to use 2448 byte buffers, which can't fit that so trim blocks instead
 	m_internalBlockSize = chd_header->unitbytes;
 
+	int pregap = 0;
+	int trackCounter = 0;
+	int currentTrackNum = 0;
+
+	u32 metadataLength;
+	u32 discLba = 0;
+
+	std::string buffer;
+	cdvdTrack track;
+	buffer.resize(300);
+
+	while (true)
+	{
+		error = chd_get_metadata(ChdFile, CDROM_TRACK_METADATA2_TAG, trackCounter, buffer.data(),
+			buffer.size(), &metadataLength, nullptr, nullptr);
+
+		if (error == CHDERR_NONE)
+		{
+			std::vector<std::string> trackInfo = parse(buffer, CDROM_TRACK_METADATA2_FORMAT);
+			std::string trackNumString;
+			std::size_t pos;
+
+			trackNumString = trackInfo[0];
+			currentTrackNum = std::stoi(trackNumString, &pos);
+			track.trackNum = currentTrackNum;
+
+			if (trackType.find(trackInfo[1]) != trackType.end())
+			{
+				track.type = trackType[trackInfo[1]];
+			}
+			// Assume pregap, index 0
+			if (!trackInfo[4].empty())
+			{
+				pregap = std::stoi(trackInfo[4]);
+			}
+			// It's a data track?
+			if (pregap == 0)
+			{
+				if (trackType[trackInfo[1]] == CDVD_MODE_2352)
+				{
+					pregap = 150;
+				}
+			}
+
+			track.startLba = discLba;
+			track.startTrack = pregap;
+
+		}
+		else
+		{
+			// Try older version then skip and assume no tracks past this point
+			error = chd_get_metadata(ChdFile, CDROM_TRACK_METADATA_TAG, trackCounter, &buffer[0],
+				sizeof(buffer), &metadataLength, nullptr, nullptr);
+
+			if (error != CHDERR_NONE)
+			{
+				break;
+			}
+		}
+
+		tracks.push_back(track);
+
+		trackCounter += 1;
+		discLba += pregap;
+	}
+
 	return true;
+}
+
+// Note that CHD is a track format. We can make a real emulated SubQ in here!
+cdvdSubQ* ChdFileReader::ReadSubQ(uint lsn)
+{
+	cdvdSubQ* subq;
+
+	// ToDo: Read tracks from chd, generate SubQ
+
+	return nullptr;
 }
 
 ThreadedFileReader::Chunk ChdFileReader::ChunkForOffset(u64 offset)

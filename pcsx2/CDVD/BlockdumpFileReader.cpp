@@ -173,6 +173,11 @@ void BlockdumpFileReader::CancelRead(void)
 {
 }
 
+cdvdSubQ *BlockdumpFileReader::ReadSubQ(uint lsn)
+{
+	return nullptr;
+}
+
 void BlockdumpFileReader::Close(void)
 {
 	if (m_file)

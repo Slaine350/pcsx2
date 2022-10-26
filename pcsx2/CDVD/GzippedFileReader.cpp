@@ -383,6 +383,11 @@ int GzippedFileReader::FinishRead(void)
 	return res;
 };
 
+cdvdSubQ *GzippedFileReader::ReadSubQ(uint lsn)
+{
+	return nullptr;
+}
+
 #define PTT clock_t
 #define NOW() (clock() / (CLOCKS_PER_SEC / 1000))
 

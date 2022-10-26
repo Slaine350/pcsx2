@@ -91,16 +91,24 @@ typedef struct _cdvdSubQ
 	u8 discF;      // current frame offset from first track (BCD encoded)
 } cdvdSubQ;
 
+typedef struct _cdvdIndex
+{
+	u32 start;
+	u32 length;
+	cdvdSubQ subchannel;
+} cdvdIndex;
+
 typedef struct _cdvdTrack
 {
-	u32 startLba;
-	u8 trackNum;
-	u32 startDisc;
-	u32 startTrack;
 	u8 type;
+	u8 trackNum;
+	u32 trackLength;
+	std::string filePath;
 
+	u32 startLba;
+	u32 startTrack;
+	cdvdIndex indicies[2];
 } cdvdTrack;
-
 
 typedef struct _cdvdTD
 { // NOT bcd coded
@@ -133,6 +141,8 @@ typedef struct _sectorInfo
 #define CDVD_MODE_2328 2 // skip sync+head+sub (24) bytes
 #define CDVD_MODE_2048 3 // skip sync+head+sub (24) bytes
 #define CDVD_MODE_2368 4 // full 2352 bytes + 16 subq
+#define CDVD_MODE_2336 5 // Mode2 full mix
+#define CDVD_MODE_2324 6 // Mode2 form 2
 
 // CDVDgetDiskType returns:
 #define CDVD_TYPE_ILLEGAL 0xff   // Illegal Disc
@@ -223,6 +233,26 @@ struct CDVD_API
 	_CDVDgetDualInfo getDualInfo;
 };
 
+static std::map<std::string, uint> trackType{
+	{"MODE2_FORM_MIX", CDVD_MODE_2336},
+	{"MODE2_FORM1", CDVD_MODE_2048},
+	{"MODE2_FORM2", CDVD_MODE_2328},
+	{"MODE2_RAW", CDVD_MODE_2352},
+	{"MODE1_RAW", CDVD_MODE_2352},
+	{"MODE2", CDVD_MODE_2336},
+	{"MODE1", CDVD_MODE_2048},
+	{"AUDIO", CDVD_MODE_2352}};
+
+// ----------------------------------------------------------------------------
+// diskTypeCached
+// Internal disc type cache, to reduce the overhead of disc type checks, which are
+// performed quite liberally by many games (perhaps intended to keep the PS2 DVD
+// from spinning down due to idle activity?).
+// Cache is set to -1 for init and when the disc is removed/changed, which invokes
+// a new DiskTypeCheck.  All subsequent checks use the non-negative value here.
+//
+static int diskTypeCached = -1;
+
 // ----------------------------------------------------------------------------
 //   Multiple interface system for CDVD.
 // ----------------------------------------------------------------------------
@@ -240,6 +270,8 @@ static const u32 CacheSize = 1U << CACHE_SIZE;
 static SectorInfo Cache[CacheSize];
 
 static std::mutex s_cache_lock;
+
+static std::vector<cdvdTrack> tracks;
 
 extern void CDVDsys_ChangeSource(CDVD_SourceType type);
 extern void CDVDsys_SetFile(CDVD_SourceType srctype, std::string newfile);

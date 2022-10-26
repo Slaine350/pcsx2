@@ -225,6 +225,11 @@ void MultipartFileReader::CancelRead(void)
 	}
 }
 
+cdvdSubQ *MultipartFileReader::ReadSubQ(uint lsn)
+{
+	return nullptr;
+}
+
 void MultipartFileReader::Close(void)
 {
 	for(uint i=0;i<m_numparts;i++)

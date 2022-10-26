@@ -76,34 +76,25 @@ s32 CALLBACK ISOopen(const char* pTitle)
 
 	layer1start = -1;
 	layer1searched = false;
-
-	cdvdCacheReset();
-
 	return 0;
 }
 
 s32 CALLBACK ISOgetSubQ(u32 lsn, cdvdSubQ* subq)
 {
-	// fake it
-	u8 min, sec, frm;
-	subq->ctrl = 4;
-	subq->mode = 1;
-	subq->trackNum = itob(1);
-	subq->trackIndex = itob(1);
-
-	lba_to_msf(lsn, &min, &sec, &frm);
-	subq->trackM = itob(min);
-	subq->trackS = itob(sec);
-	subq->trackF = itob(frm);
-
-	subq->pad = 0;
-
-	lba_to_msf(lsn + (2 * 75), &min, &sec, &frm);
-	subq->discM = itob(min);
-	subq->discS = itob(sec);
-	subq->discF = itob(frm);
-
-	return 0;
+	cdvdCacheFetch(lsn, nullptr, subq);
+	if (subq->trackNum > 0)
+	{
+		// the formatted subq command returns:  control/adr, track, index, trk min, trk sec, trk frm, 0x00, abs min, abs sec, abs frm
+		Console.WriteLn("SubQ track: %d", subq->trackNum);
+		Console.WriteLn("SubQ discM: %d", subq->discM);
+		Console.WriteLn("SubQ discS: %d", subq->discS);
+		Console.WriteLn("SubQ discF: %d", subq->discF);
+		Console.WriteLn("SubQ trackM: %d", subq->trackM);
+		Console.WriteLn("SubQ trackS: %d", subq->trackS);
+		Console.WriteLn("SubQ trackF: %d", subq->trackF);
+		return 0;
+	}
+	return -1;
 }
 
 s32 CALLBACK ISOgetTN(cdvdTN* Buffer)

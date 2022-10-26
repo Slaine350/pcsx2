@@ -16,6 +16,7 @@
 #pragma once
 #include "ThreadedFileReader.h"
 #include "libchdr/chd.h"
+#include "CDVD/CDVDcommon.h"
 #include <vector>
 
 class ChdFileReader : public ThreadedFileReader
@@ -30,6 +31,7 @@ public:
 
 	Chunk ChunkForOffset(u64 offset) override;
 	int ReadChunk(void *dst, s64 blockID) override;
+	cdvdSubQ * ReadSubQ(uint lsn) override;
 
 	void Close2(void) override;
 	uint GetBlockCount(void) const override;
