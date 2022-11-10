@@ -95,7 +95,7 @@ void IOCtlSrc::SetSpindleSpeed(bool restore_defaults) const
 	}
 }
 
-bool IOCtlSrc::ReadSubChannelQ(u32 sector, cdvdSubQ* subQ) const
+bool IOCtlSrc::ReadSubChannelQ(cdvdSubQ* subQ) const
 {
 	CDROM_SUB_Q_DATA_FORMAT format;
 	SUB_Q_CHANNEL_DATA data;
@@ -119,6 +119,29 @@ bool IOCtlSrc::ReadSubChannelQ(u32 sector, cdvdSubQ* subQ) const
 	subQ->trackM = data.CurrentPosition.TrackRelativeAddress[1];
 	subQ->trackS = data.CurrentPosition.TrackRelativeAddress[2];
 	subQ->trackF = data.CurrentPosition.TrackRelativeAddress[3];
+	return true;
+}
+
+s32 IOCtlSrc::Seek(u32 sectorToSeek) const
+{
+	u8 msf[4];
+	int returned;
+	CDROM_SEEK_AUDIO_MSF cdMsf;
+
+	lsn_to_msf(msf, sectorToSeek);
+
+	cdMsf.M = btoi(msf[0]);
+	cdMsf.S = btoi(msf[1]);
+	cdMsf.F = btoi(msf[2]);
+
+	if (!DeviceIoControl(m_device, IOCTL_CDROM_SEEK_AUDIO_MSF, &cdMsf,
+		sizeof(cdMsf), NULL, NULL, NULL, NULL))
+	{
+		DWORD error = ::GetLastError();
+		std::string message = std::system_category().message(error);
+		Console.Error(message);
+		return false;
+	}
 	return true;
 }
 

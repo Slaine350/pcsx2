@@ -16,6 +16,14 @@
 #pragma once
 
 #include "CDVDcommon.h"
+#include <queue>
+
+enum SeekType
+{
+	SEEK_P,
+	SEEK_L
+};
+
 
 // Not used.
 typedef struct
@@ -67,6 +75,7 @@ struct cdrStruct
 	u8 ResultTD[4];
 	u8 SetSector[4];
 	u8 SetSectorSeek[4];
+	s32 seekLsn;
 	u8 Track;
 	int Play;
 	int CurTrack;
@@ -86,8 +95,10 @@ struct cdrStruct
 };
 
 extern cdrStruct cdr;
+extern std::queue<s32> audioBuffer;
 
 void cdrReset();
+void processCDDA();
 void cdrInterrupt();
 void cdrReadInterrupt();
 void UpdateStat(uint stat);
@@ -100,3 +111,4 @@ void cdrWrite0(u8 rt);
 void cdrWrite1(u8 rt);
 void cdrWrite2(u8 rt);
 void cdrWrite3(u8 rt);
+void startSeek(SeekType type);

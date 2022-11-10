@@ -610,8 +610,9 @@ s32 cdvdReadSubQ(s32 lsn, cdvdSubQ* subq)
 {
 	if (cdvd.subq.trackNum > 0)
 	{
-		memcpy(subq, &cdvd.subq, sizeof(cdvdSubQ));
-		Console.WriteLn("subQ READ: %d", subq->trackNum);
+		subq = &cdvd.subq;
+		currentTrackNum = subq->trackNum;
+		Console.WriteLn("PS2 SUB TRACK: %d", subq->trackNum);
 		return 0;
 	}
 	return 0x80;
@@ -1406,6 +1407,8 @@ static uint cdvdStartSeek(uint newsector, CDVD_MODE_TYPE mode)
 	if (cdvd.nCommand != N_CD_SEEK)
 		cdvd.Action = cdvdAction_None;
 
+	cdvd.subq = *CDVD->readSubQ(cdvd.SeekToSector);
+
 	return seektime;
 }
 
@@ -2026,11 +2029,12 @@ static void cdvdWrite04(u8 rt)
 			// (ie, not using the hard drive)
 			cdvd.RErr = DoCDVDreadTrack(cdvd.SeekToSector, cdvd.ReadMode);
 
+			CDVD->getSubQ(cdvd.SeekToSector, &cdvd.subq);
+
 			// Set the reading block flag.  If a seek is pending then Readed will
 			// take priority in the handler anyway.  If the read is contiguous then
 			// this'll skip the seek delay.
 			cdvd.Reading = 1;
-			CDVD->getSubQ(cdvd.SeekToSector, &cdvd.subq);
 			break;
 		}
 		case N_DVD_READ: // DvdRead
@@ -2949,6 +2953,12 @@ void cdvdWrite(u8 key, u8 rt)
 			break;
 		case 0x08:
 			cdvdWrite08(rt);
+			break;
+		case 0x09:
+			if (rt > 0)
+			{
+				Console.WriteLn("CDVD Type: %d", rt);
+			}
 			break;
 		case 0x0A:
 			cdvdWrite0A(rt);

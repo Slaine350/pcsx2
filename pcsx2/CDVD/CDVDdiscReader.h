@@ -26,7 +26,6 @@
 
 extern u8 strack;
 extern u8 etrack;
-extern cdvdTrack tracks[100];
 
 extern int curDiskType;
 extern int curTrayStatus;
@@ -70,11 +69,12 @@ public:
 	const std::vector<toc_entry>& ReadTOC() const;
 	bool ReadSectors2048(u32 sector, u32 count, u8* buffer) const;
 	bool ReadSectors2352(u32 sector, u32 count, u8* buffer) const;
-	bool ReadSubChannelQ(u32 sector, cdvdSubQ* subQ) const;
+	bool ReadSubChannelQ(cdvdSubQ* subQ) const;
 	u32 GetLayerBreakAddress() const;
 	s32 GetMediaType() const;
 	void SetSpindleSpeed(bool restore_defaults) const;
 	bool DiscReady();
+	s32 Seek(u32 sectorToSeek) const;
 };
 
 extern std::unique_ptr<IOCtlSrc> src;
@@ -90,6 +90,7 @@ extern void (*newDiscCB)();
 bool cdvdStartThread();
 void cdvdStopThread();
 void cdvdRequestSector(u32 sector, s32 mode);
+bool cdvdReadBlockOfSectors(u32 sector, u8* data, cdvdSubQ* subQ = nullptr);
 u8* cdvdGetSector(u32 sector, s32 mode);
 s32 cdvdDirectReadSector(u32 sector, s32 mode, u8* buffer);
 cdvdSubQ *cdvdReadSubQ(u32 sector);

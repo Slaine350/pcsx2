@@ -82,6 +82,8 @@ u8 Test20[] = {0x98, 0x06, 0x10, 0xC3};
 u8 Test22[] = {0x66, 0x6F, 0x72, 0x20, 0x45, 0x75, 0x72, 0x6F};
 u8 Test23[] = {0x43, 0x58, 0x44, 0x32, 0x39, 0x34, 0x30, 0x51};
 
+std::queue<s32> audioBuffer;
+
 //backported from PCSXR
 // cdr.Stat:
 #define NoIntr 0
@@ -153,6 +155,7 @@ static __fi void StartReading(u32 type)
 	cdr.StatP &= ~STATUS_ERROR;
 	cdr.FirstSector = 1;
 	cdr.Readed = 0xff;
+
 	//DevCon.Warning("ReadN/ReadS delay: %d", sectorSeekReadDelay);
 	AddIrqQueue(READ_ACK, sectorSeekReadDelay);
 	sectorSeekReadDelay = shortSectorSeekReadDelay;
@@ -163,6 +166,7 @@ static __fi void StopReading()
 	if (cdr.Reading)
 	{
 		cdr.Reading = 0;
+		cdr.StatP &= ~STATUS_READ;
 		psxRegs.interrupt &= ~(1 << IopEvt_CdromRead);
 	}
 }
@@ -219,6 +223,7 @@ static void ReadTrack()
 	CDVD_LOG("KEY *** %x:%x:%x", cdr.Prev[0], cdr.Prev[1], cdr.Prev[2]);
 	if (EmuConfig.CdvdVerboseReads)
 		DevCon.WriteLn("CD Read Sector %x", msf_to_lsn(cdr.SetSector));
+
 	cdr.RErr = DoCDVDreadTrack(msf_to_lsn(cdr.SetSector), CDVD_MODE_2340);
 }
 
@@ -233,6 +238,21 @@ static void AddIrqQueue(u8 irq, u32 ecycle)
 	{
 		CDR_INT(ecycle);
 	}
+}
+
+void startSeek(SeekType type)
+{
+	if (cdr.SetlocPending)
+	{
+		memcpy(cdr.SetSectorSeek, cdr.SetSector, 4);
+		cdr.SetlocPending = 0;
+	}
+
+	UpdateStat(STATUS_SEEK);
+
+	cdr.seekLsn = msf_to_lsn(cdr.SetSectorSeek);
+	CDVD->seek(cdr.seekLsn);
+	CDVD->getSubQ(cdr.seekLsn, &cdr.subQ);
 }
 
 void cdrInterrupt()
@@ -331,14 +351,17 @@ void cdrInterrupt()
 
 		case CdlPause + 0x20:
 			SetResultSize(1);
-			cdr.StatP &= ~STATUS_READ;
-			cdr.StatP |= STATUS_ROTATING;
+			UpdateStat(STATUS_ROTATING);
+			Console.WriteLn("PAUSE");
+			StopCdda();
 			cdr.Result[0] = cdr.StatP;
 			cdr.Stat = Complete;
 			break;
 
 		case CdlInit:
 			SetResultSize(1);
+			StopReading();
+			StopCdda();
 			UpdateStat(STATUS_ROTATING);
 			cdr.Mode |= MODE_INIT;
 			cdr.Result[0] = cdr.StatP;
@@ -396,6 +419,7 @@ void cdrInterrupt()
 		// the "last" data sector read should cache the sector header for GetlocL
 		case CdlGetlocL:
 			SetResultSize(8);
+			Console.WriteLn("GETLOC_L");
 			for (i = 0; i < 8; i++)
 				cdr.Result[i] = cdr.Transfer[i];
 			cdr.Stat = Acknowledge;
@@ -403,6 +427,8 @@ void cdrInterrupt()
 
 		case CdlGetlocP:
 			SetResultSize(8);
+			Console.WriteLn("GETLOC_P");
+			currentTrackNum = cdr.subQ.trackNum;
 			cdr.Result[0] = cdr.subQ.trackNum;
 			cdr.Result[1] = cdr.subQ.trackIndex;
 			cdr.Result[2] = cdr.subQ.trackM;
@@ -411,6 +437,13 @@ void cdrInterrupt()
 			cdr.Result[5] = cdr.subQ.discM;
 			cdr.Result[6] = cdr.subQ.discS;
 			cdr.Result[7] = cdr.subQ.discF;
+			Console.WriteLn("SubQ track: %d", cdr.subQ.trackNum);
+			Console.WriteLn("SubQ discM: %d", cdr.subQ.discM);
+			Console.WriteLn("SubQ discS: %d", cdr.subQ.discS);
+			Console.WriteLn("SubQ discF: %d", cdr.subQ.discF);
+			Console.WriteLn("SubQ trackM: %d", cdr.subQ.trackM);
+			Console.WriteLn("SubQ trackS: %d", cdr.subQ.trackS);
+			Console.WriteLn("SubQ trackF: %d", cdr.subQ.trackF);
 			cdr.Stat = Acknowledge;
 			break;
 
@@ -434,10 +467,10 @@ void cdrInterrupt()
 
 		case CdlGetTD:
 			cdr.CmdProcess = 0;
-			cdr.Track = btoi(cdr.Param[0]);
+			currentTrackNum = btoi(cdr.Param[0]);
 			SetResultSize(4);
 			cdr.StatP |= STATUS_ROTATING;
-			if (CDVD->getTD(cdr.Track, &trackInfo) == -1)
+			if (CDVD->getTD(currentTrackNum, &trackInfo) == -1)
 			{
 				cdr.Stat = DiskError;
 				cdr.Result[0] |= 0x01;
@@ -558,10 +591,10 @@ void cdrInterrupt()
 				return;
 
 			SetResultSize(1);
-			cdr.StatP |= STATUS_ROTATING;
 			cdr.Result[0] = cdr.StatP;
 			cdr.Stat = Acknowledge;
 
+			Console.Warning("Read ACK");
 			ReadTrack();
 
 			CDREAD_INT((cdr.Mode & 0x80) ? (cdReadTime / 2) : cdReadTime);
@@ -610,6 +643,8 @@ void cdrReadInterrupt()
 	cdr.OCUP = 1;
 	SetResultSize(1);
 	cdr.Result[0] = cdr.StatP;
+
+	Console.Warning("Read Interrupt");
 
 	if (cdr.RErr == 0)
 	{
@@ -663,10 +698,33 @@ void cdrReadInterrupt()
 		//DevCon.Warning("normal: %d",cdReadTime);
 		CDREAD_INT((cdr.Mode & 0x80) ? (cdReadTime / 2) : cdReadTime);
 	}
-
 	CDVD->getSubQ(msf_to_lsn(cdr.SetSector), &cdr.subQ);
 	psxHu32(0x1070) |= 0x4;
 	return;
+}
+
+
+void processCDDA()
+{
+	int numSamples = 2352 / 16 / 2;
+
+	//Console.Warning("Numsamples: ", numSamples);
+
+	for (int i = 0; i < numSamples; i++)
+	{
+		//audioBuffer[0].push_back(static_cast<s32>(*sector));
+		//audioBuffer[1].push_back(static_cast<s32>(*sector + sizeof(s16)));
+
+		//Console.Warning("Sample Left: %d", audioBuffer[0][i]);
+		//Console.Warning("Sample Right: %d", audioBuffer[1][i]);
+
+		s16 samp_left, samp_right;
+		std::memcpy(&samp_left, cdr.pTransfer, sizeof(samp_left));
+		std::memcpy(&samp_right, cdr.pTransfer + sizeof(s16), sizeof(samp_right));
+		audioBuffer.push(static_cast<s32>(samp_left | samp_right));
+		cdr.pTransfer += sizeof(s16) * 2;
+	}
+
 }
 
 /*
@@ -787,25 +845,31 @@ void cdrWrite1(u8 rt)
 			// (it doesn't start reading or seeking, and doesn't interrupt or redirect any active reads).
 			// But it does set the seek target. This is used to set the target then seperately start the seek after setloc
 			int oldSector = msf_to_lsn(cdr.SetSector);
+
 			for (i = 0; i < 3; i++)
-				cdr.SetSector[i] = btoi(cdr.Param[i]);
-			cdr.SetSector[3] = 0;
-			if ((cdr.SetSector[0] | cdr.SetSector[1] | cdr.SetSector[2]) == 0)
 			{
-				*(u32*)cdr.SetSector = *(u32*)cdr.SetSectorSeek;
+				cdr.SetSector[i] = btoi(cdr.Param[i]);
 			}
+			cdr.SetSector[3] = 0;
+
 			int newSector = msf_to_lsn(cdr.SetSector);
 
 			// sectorSeekReadDelay should lead to sensible random seek results in QA (Aging Disk) test
 			sectorSeekReadDelay = abs(newSector - oldSector) * 100;
+
 			if (sectorSeekReadDelay < shortSectorSeekReadDelay)
+			{
 				sectorSeekReadDelay = shortSectorSeekReadDelay;
+			}
+
 			//DevCon.Warning("CdlSetloc sectorSeekReadDelay: %d", sectorSeekReadDelay);
 
 			cdr.Ctrl |= 0x80;
 			cdr.Stat = NoIntr;
 			cdr.SetlocPending = 1;
-			AddIrqQueue(cdr.Cmd, 0x800); // the seek delay occurs on the next read / seek command (CdlReadS, CdlSeekL, etc)
+
+			// the seek delay occurs on the next read / seek command (CdlReadS, CdlSeekL, etc)
+			AddIrqQueue(cdr.Cmd, 0x800);
 		}
 		break;
 		case CdlPlay:
@@ -814,12 +878,16 @@ void cdrWrite1(u8 rt)
 				memcpy(cdr.SetSectorSeek, cdr.SetSector, 4);
 				cdr.SetlocPending = 0;
 			}
+			Console.WriteLn("PLAY");
 			cdr.Play = 1;
 			cdr.Ctrl |= 0x80;
 			cdr.Stat = NoIntr;
 			UpdateStat(STATUS_PLAY);
-			// Play is almost identical to CdlReadS, believe it or not. The main difference is that this does not trigger a completed read IRQ
-			StartReading(2);
+			ReadTrack();
+			cdr.subQ = *CDVD->readSubQ(msf_to_lsn(cdr.SetSectorSeek));
+
+			cdr.pTransfer = cdr.Transfer;
+			//processCDDA();
 			AddIrqQueue(cdr.Cmd, 0x800);
 			break;
 
@@ -872,8 +940,6 @@ void cdrWrite1(u8 rt)
 
 		case CdlReset:
 		case CdlInit:
-			StopCdda();
-			StopReading();
 			cdr.Ctrl |= 0x80;
 			cdr.Stat = NoIntr;
 			AddIrqQueue(cdr.Cmd, 0x800);
@@ -941,14 +1007,21 @@ void cdrWrite1(u8 rt)
 			break;
 
 		case CdlSeekL:
-		case CdlSeekP:
-			((u32*)cdr.SetSectorSeek)[0] = ((u32*)cdr.SetSector)[0];
 			cdr.Ctrl |= 0x80;
 			cdr.Stat = NoIntr;
-			UpdateStat(STATUS_SEEK);
 			//DevCon.Warning("CdlSeekL delay: %d", sectorSeekReadDelay);
 			AddIrqQueue(cdr.Cmd, sectorSeekReadDelay);
 			sectorSeekReadDelay = shortSectorSeekReadDelay;
+			startSeek(SeekType::SEEK_L);
+			break;
+
+		case CdlSeekP:
+			cdr.Ctrl |= 0x80;
+			cdr.Stat = NoIntr;
+			//DevCon.Warning("CdlSeekL delay: %d", sectorSeekReadDelay);
+			AddIrqQueue(cdr.Cmd, sectorSeekReadDelay);
+			sectorSeekReadDelay = shortSectorSeekReadDelay;
+			startSeek(SeekType::SEEK_P);
 			break;
 
 		case CdlTest:

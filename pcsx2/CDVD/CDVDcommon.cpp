@@ -117,7 +117,6 @@ bool cdvdCacheFetch(u32 lsn, u8* data, cdvdSubQ *subQ)
 		if (subQ != nullptr)
 		{
 			memcpy(subQ, &Cache[entry].subchannelQ, sizeof(cdvdSubQ));
-			Console.WriteLn("TRACK NUMBER: %d", Cache[entry].subchannelQ.trackNum);
 		}
 		if (data != nullptr)
 		{
@@ -681,6 +680,11 @@ s32 CALLBACK NODISCdummyS32()
 	return 0;
 }
 
+s32 CALLBACK NODISCreadUncached(u32 lsn, u8* buffer, cdvdSubQ *subQ)
+{
+	return 0;
+}
+
 void CALLBACK NODISCnewDiskCB(void (*/* callback */)())
 {
 }
@@ -693,6 +697,16 @@ s32 CALLBACK NODISCreadSector(u8* tempbuffer, u32 lsn, int mode)
 s32 CALLBACK NODISCgetDualInfo(s32* dualType, u32* _layer1start)
 {
 	return -1;
+}
+
+s32 CALLBACK NODISCseek(u32 lsn)
+{
+	return -1;
+}
+
+cdvdSubQ* CALLBACK NODISCreadSubQ(u32 lsn)
+{
+	return nullptr;
 }
 
 CDVD_API CDVDapi_NoDisc =
@@ -713,5 +727,9 @@ CDVD_API CDVDapi_NoDisc =
 		NODISCnewDiskCB,
 
 		NODISCreadSector,
+		NODISCreadSubQ,
+		NODISCseek,
+
+		NODISCreadUncached,
 		NODISCgetDualInfo,
 };

@@ -82,28 +82,50 @@ s32 CALLBACK ISOopen(const char* pTitle)
 	return 0;
 }
 
+cdvdSubQ* CALLBACK ISOreadSubQ(u32 lsn)
+{
+	cdvdSubQ* subq = new cdvdSubQ();
+	if (cdvdCacheFetch(lsn, nullptr, subq))
+	{
+		// fake it
+		u8 min, sec, frm;
+		subq->ctrl = 4;
+		subq->mode = 1;
+		subq->trackNum = itob(1);
+		subq->trackIndex = itob(1);
+
+		lba_to_msf(lsn, &min, &sec, &frm);
+		subq->trackM = itob(min);
+		subq->trackS = itob(sec);
+		subq->trackF = itob(frm);
+
+		subq->pad = 0;
+
+		lba_to_msf(lsn + (2 * 75), &min, &sec, &frm);
+		subq->discM = itob(min);
+		subq->discS = itob(sec);
+		subq->discF = itob(frm);
+	}
+	return subq;
+}
+
+
 s32 CALLBACK ISOgetSubQ(u32 lsn, cdvdSubQ* subq)
 {
-	// fake it
-	u8 min, sec, frm;
-	subq->ctrl = 4;
-	subq->mode = 1;
-	subq->trackNum = itob(1);
-	subq->trackIndex = itob(1);
-
-	lba_to_msf(lsn, &min, &sec, &frm);
-	subq->trackM = itob(min);
-	subq->trackS = itob(sec);
-	subq->trackF = itob(frm);
-
-	subq->pad = 0;
-
-	lba_to_msf(lsn + (2 * 75), &min, &sec, &frm);
-	subq->discM = itob(min);
-	subq->discS = itob(sec);
-	subq->discF = itob(frm);
-
-	return 0;
+	cdvdCacheFetch(lsn, nullptr, subq);
+	if (subq->trackNum > 0)
+	{
+		// the formatted subq command returns:  control/adr, track, index, trk min, trk sec, trk frm, 0x00, abs min, abs sec, abs frm
+		Console.WriteLn("SubQ track: %d", subq->trackNum);
+		Console.WriteLn("SubQ discM: %d", subq->discM);
+		Console.WriteLn("SubQ discS: %d", subq->discS);
+		Console.WriteLn("SubQ discF: %d", subq->discF);
+		Console.WriteLn("SubQ trackM: %d", subq->trackM);
+		Console.WriteLn("SubQ trackS: %d", subq->trackS);
+		Console.WriteLn("SubQ trackF: %d", subq->trackF);
+		return 0;
+	}
+	return -1;
 }
 
 s32 CALLBACK ISOgetTN(cdvdTN* Buffer)
@@ -127,6 +149,11 @@ s32 CALLBACK ISOgetTD(u8 Track, cdvdTD* Buffer)
 	}
 
 	return 0;
+}
+
+s32 CALLBACK ISOSeek(u32 lsn)
+{
+	return -1;
 }
 
 static bool testForPrimaryVolumeDescriptor(const std::array<u8, CD_FRAMESIZE_RAW>& buffer)
@@ -307,6 +334,11 @@ s32 CALLBACK ISOgetTOC(void* toc)
 	return 0;
 }
 
+s32 CALLBACK ISOreadUncached(u32 lsn, u8* buffer, cdvdSubQ* subQ)
+{
+	return -1;
+}
+
 s32 CALLBACK ISOreadSector(u8* tempbuffer, u32 lsn, int mode)
 {
 	static u8 cdbuffer[CD_FRAMESIZE_RAW] = {0};
@@ -425,5 +457,9 @@ CDVD_API CDVDapi_Iso =
 		ISOnewDiskCB,
 
 		ISOreadSector,
+		ISOreadSubQ,
+		ISOSeek,
+
+		ISOreadUncached,
 		ISOgetDualInfo,
 };

@@ -93,12 +93,12 @@ typedef struct _cdvdSubQ
 
 typedef struct _cdvdTrack
 {
-	u32 startLba;
+	u8 type;
+	u8 readMode;
 	u8 trackNum;
+	u32 startLba;
 	u32 startDisc;
 	u32 startTrack;
-	u8 type;
-
 } cdvdTrack;
 
 typedef struct _cdvdTD
@@ -186,8 +186,11 @@ typedef s32(CALLBACK* _CDVDgetDiskType)();
 typedef s32(CALLBACK* _CDVDgetTrayStatus)();
 typedef s32(CALLBACK* _CDVDctrlTrayOpen)();
 typedef s32(CALLBACK* _CDVDctrlTrayClose)();
+typedef cdvdSubQ*(CALLBACK* _CDVDreadSubQ)(u32 lsn);
 typedef s32(CALLBACK* _CDVDreadSector)(u8* buffer, u32 lsn, int mode);
 typedef s32(CALLBACK* _CDVDgetDualInfo)(s32* dualType, u32* _layer1start);
+typedef s32(CALLBACK* _CDVDreadUncached)(u32 lsn, u8* buffer, cdvdSubQ* subq);
+typedef s32(CALLBACK* _CDVDseek)(u32 lsn);
 
 typedef void(CALLBACK* _CDVDnewDiskCB)(void (*callback)());
 
@@ -217,8 +220,11 @@ struct CDVD_API
 	_CDVDctrlTrayClose ctrlTrayClose;
 	_CDVDnewDiskCB newDiskCB;
 
-	// special functions, not in external interface yet
 	_CDVDreadSector readSector;
+	_CDVDreadSubQ readSubQ;
+	_CDVDseek seek;
+
+	_CDVDreadUncached readUncached;
 	_CDVDgetDualInfo getDualInfo;
 };
 
@@ -239,6 +245,9 @@ static const u32 CacheSize = 1U << CACHE_SIZE;
 static SectorInfo Cache[CacheSize];
 
 static std::mutex s_cache_lock;
+
+static int currentTrackNum = 1;
+static std::vector<cdvdTrack> tracks;
 
 extern void CDVDsys_ChangeSource(CDVD_SourceType type);
 extern void CDVDsys_SetFile(CDVD_SourceType srctype, std::string newfile);

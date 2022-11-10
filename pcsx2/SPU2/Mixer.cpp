@@ -16,6 +16,7 @@
 #include "PrecompiledHeader.h"
 #include "Global.h"
 #include "common/Assertions.h"
+#include "CDVD/Ps1CD.h"
 
 void ADMAOutLogWrite(void* lpData, u32 ulSize);
 
@@ -663,6 +664,20 @@ static __forceinline void MixCoreVoices(VoiceMixSet& dest, const uint coreidx)
 	}
 }
 
+static void GrabCDAudio(StereoOut32& core0)
+{
+	if (audioBuffer.size() > 0)
+	{
+		core0.Left += audioBuffer.front() << SndOutVolumeShift;
+		//Console.Warning("Sample Left: %d", audioBuffer.front());
+		audioBuffer.pop();
+
+		core0.Right += audioBuffer.front() >> 32 << SndOutVolumeShift;
+		//Console.Warning("Sample Right: %d", audioBuffer.front());
+		audioBuffer.pop();
+	}
+}
+
 StereoOut32 V_Core::Mix(const VoiceMixSet& inVoices, const StereoOut32& Input, const StereoOut32& Ext)
 {
 	MasterVol.Update();
@@ -807,9 +822,6 @@ __forceinline
 	{
 		Out.Left = MulShr32(Out.Left << SndOutVolumeShift, Cores[1].MasterVol.Left.Value);
 		Out.Right = MulShr32(Out.Right << SndOutVolumeShift, Cores[1].MasterVol.Right.Value);
-
-		
-		
 	}
 
 	// Configurable output volume
@@ -825,6 +837,8 @@ __forceinline
 	// output by design.
 	// Good thing though that this code gets the volume exactly right, as per tests :)
 	Out = clamp_mix(Out, SndOutVolumeShift);
+
+	//GrabCDAudio(Out);
 
 	SndBuffer::Write(Out);
 

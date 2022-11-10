@@ -34,25 +34,32 @@ static std::mutex s_request_lock;
 static std::queue<u32> s_request_queue;
 static std::atomic<bool> cdvd_is_open;
 
-bool cdvdReadBlockOfSectors(u32 sector, u8* data)
+bool cdvdReadBlockOfSectors(u32 sector, u8* data, cdvdSubQ* subQ)
 {
 	u32 count = std::min(sectors_per_read, src->GetSectorCount() - sector);
 	const s32 media = src->GetMediaType();
 
-	// TODO: Is it really necessary to retry if it fails? I'm not sure the
-	// second time is really going to be any better.
-	for (int tries = 0; tries < 2; ++tries)
+	if (data != nullptr)
 	{
-		if (media >= 0)
+		// TODO: Is it really necessary to retry if it fails? I'm not sure the
+		// second time is really going to be any better.
+		for (int tries = 0; tries < 2; ++tries)
 		{
-			if (src->ReadSectors2048(sector, count, data))
-				return true;
+			if (media >= 0)
+			{
+				if (src->ReadSectors2048(sector, count, data))
+					return true;
+			}
+			else
+			{
+				if (src->ReadSectors2352(sector, count, data))
+					return true;
+			}
 		}
-		else
-		{
-			if (src->ReadSectors2352(sector, count, data))
-				return true;
-		}
+	}
+	if (subQ != nullptr)
+	{
+		memcpy(subQ, cdvdReadSubQ(sector), sizeof(cdvdSubQ));
 	}
 	return false;
 }
@@ -107,33 +114,27 @@ cdvdSubQ *cdvdReadSubQ(u32 lsn)
 	|| curDiskType == CDVD_TYPE_PS2CD || curDiskType == CDVD_TYPE_PS2CDDA
 	|| curDiskType == CDVD_TYPE_DETCTCD || curDiskType == CDVD_TYPE_CDDA)
 	{
-		cdvdCacheFetch(lsn, nullptr, subq);
-		if (subq->trackNum <= 0)
+		Console.WriteLn("Read SubQ");
+		if (!src->ReadSubChannelQ(subq))
 		{
-			Console.WriteLn("Read SubQ");
-			if (!src->ReadSubChannelQ(lsn, subq))
-			{
-				Console.WriteLn("Fake ass");
-				// If real subQ read fails. Let's fake till we make it!
-				if (lsn >= src->GetSectorCount())
-					return nullptr;
+			// If real subQ read fails. Let's fake till we make it!
+			if (lsn >= src->GetSectorCount())
+				return nullptr;
 
-				lsn_to_msf(&subq->discM, &subq->discS, &subq->discF, lsn + 150);
+			lsn_to_msf(&subq->discM, &subq->discS, &subq->discF, lsn + 150);
 
-				u8 i = strack;
-				while (i < etrack && lsn >= tracks[i + 1].startLba)
-					++i;
+			u8 i = strack;
+			while (i < etrack && lsn >= tracks[i + 1].startLba)
+				++i;
 
-				lsn -= tracks[i].startLba;
+			lsn -= tracks[i].startLba;
 
-				lsn_to_msf(&subq->trackM, &subq->trackS, &subq->trackF, lsn + 150);
+			lsn_to_msf(&subq->trackM, &subq->trackS, &subq->trackF, lsn + 150);
 
-				subq->mode = 1;
-				subq->ctrl = tracks[i].type;
-				subq->trackNum = i;
-				subq->trackIndex = 1;
-			}
-			Console.WriteLn("Local Track Num: %d", subq->trackNum);
+			subq->mode = 1;
+			subq->ctrl = tracks[i].type;
+			subq->trackNum = i;
+			subq->trackIndex = 1;
 		}
 	}
 	return subq;
@@ -193,7 +194,7 @@ void cdvdThread()
 		{
 			if (cdvdReadBlockOfSectors(request_lsn, buffer))
 			{
-				cdvdCacheUpdate(request_lsn, buffer, cdvdReadSubQ(request_lsn));
+				cdvdCacheUpdate(request_lsn, buffer);
 			}
 			else
 			{
@@ -282,7 +283,7 @@ u8* cdvdGetSector(u32 sector, s32 mode)
 	{
 		if (cdvdReadBlockOfSectors(sector_block, buffer))
 		{
-			cdvdCacheUpdate(sector_block, buffer, cdvdReadSubQ(sector));
+			cdvdCacheUpdate(sector_block, buffer);
 		}
 	}
 	if (src->GetMediaType() >= 0)
@@ -331,7 +332,7 @@ s32 cdvdDirectReadSector(u32 sector, s32 mode, u8* buffer)
 	{
 		if (cdvdReadBlockOfSectors(sector_block, data))
 		{
-			cdvdCacheUpdate(sector_block, data, cdvdReadSubQ(sector));
+			cdvdCacheUpdate(sector_block, data);
 		}
 	}
 

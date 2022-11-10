@@ -33,7 +33,6 @@ static std::thread s_keepalive_thread;
 
 u8 strack;
 u8 etrack;
-cdvdTrack tracks[100];
 
 int curDiskType;
 int curTrayStatus;
@@ -171,6 +170,8 @@ s32 CALLBACK DISCopen(const char* pTitle)
 	if (drive.empty())
 		return -1;
 
+	tracks.resize(100);
+
 	// open device file
 	try
 	{
@@ -214,7 +215,6 @@ s32 CALLBACK DISCreadTrack(u32 lsn, int mode)
 	}
 
 	cdvdRequestSector(lsn, mode);
-
 	return 0;
 }
 
@@ -250,6 +250,7 @@ s32 CALLBACK DISCgetBuffer(u8* dest)
 	}
 
 	memcpy(dest, cdvdGetSector(csector, cmode), csize);
+	cdvdCacheUpdate(csector, nullptr, cdvdReadSubQ(csector));
 
 	return 0;
 }
@@ -269,6 +270,23 @@ s32 CALLBACK DISCgetSubQ(u32 lsn, cdvdSubQ* subq)
 		Console.WriteLn("SubQ trackF: %d", subq->trackF);
 		return 0;
 	}
+	return -1;
+}
+
+cdvdSubQ* CALLBACK DISCreadSubQ(u32 lsn)
+{
+	return cdvdReadSubQ(lsn);
+}
+
+s32 CALLBACK DISCseek(u32 lsn)
+{
+	if (src->Seek(lsn) >= 0)
+	{
+		Console.WriteLn("Seek Success");
+		cdvdCacheUpdate(lsn, nullptr, cdvdReadSubQ(lsn));
+		return 0;
+	}
+	Console.Error("Seek Error");
 	return -1;
 }
 
@@ -470,6 +488,23 @@ void CALLBACK DISCnewDiskCB(void (*callback)())
 	newDiscCB = callback;
 }
 
+s32 CALLBACK DISCreadUncached(u32 lsn, u8* buffer, cdvdSubQ *subQ)
+{
+	if (buffer != nullptr && subQ == nullptr)
+	{
+		return cdvdReadBlockOfSectors(lsn, buffer);
+	}
+	else if (subQ != nullptr && buffer == nullptr)
+	{
+		return cdvdReadBlockOfSectors(lsn, nullptr, subQ);
+	}
+	else
+	{
+		return cdvdReadBlockOfSectors(lsn, buffer, subQ);
+	}
+	return -1;
+}
+
 s32 CALLBACK DISCreadSector(u8* buffer, u32 lsn, int mode)
 {
 	return cdvdDirectReadSector(lsn, mode, buffer);
@@ -515,5 +550,9 @@ CDVD_API CDVDapi_Disc =
 		DISCnewDiskCB,
 
 		DISCreadSector,
+		DISCreadSubQ,
+		DISCseek,
+
+		DISCreadUncached,
 		DISCgetDualInfo,
 };

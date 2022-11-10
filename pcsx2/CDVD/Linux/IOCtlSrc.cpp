@@ -90,7 +90,7 @@ const std::vector<toc_entry>& IOCtlSrc::ReadTOC() const
 	return m_toc;
 }
 
-bool IOCtlSrc::ReadSubChannelQ(u32 sector, cdvdSubQ* subQ) const
+bool IOCtlSrc::ReadSubChannelQ(cdvdSubQ* subQ) const
 {
 	#ifdef __linux__
 	cdrom_subchnl sub;
@@ -249,6 +249,27 @@ bool IOCtlSrc::ReadCDInfo()
 	return true;
 #else
 	return false;
+#endif
+}
+
+s32 IOCtlSrc::Seek(u32 sectorToSeek) const
+{
+#ifdef __linux__
+	u8 msf[4];
+	cdrom_msf cdMsf;
+	lsn_to_msf(msf, sectorToSeek);
+	//memcpy(&cdMsf, msf, 4);
+	cdMsf.cdmsf_min0 = btoi(msf[0]);
+	cdMsf.cdmsf_sec0 = btoi(msf[1]);
+	cdMsf.cdmsf_frame0 = btoi(msf[2]);
+	
+	Console.WriteLn("M: %d", cdMsf.cdmsf_min0);
+	Console.WriteLn("S: %d", cdMsf.cdmsf_sec0);
+	Console.WriteLn("F: %d", cdMsf.cdmsf_frame0);
+
+	return ioctl(m_device, CDROMSEEK, &cdMsf);
+#else
+	return -1;
 #endif
 }
 
