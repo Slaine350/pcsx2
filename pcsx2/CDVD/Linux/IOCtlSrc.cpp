@@ -109,12 +109,12 @@ bool IOCtlSrc::ReadSubChannelQ(cdvdSubQ* subQ) const
 	subQ->ctrl = sub.cdsc_ctrl;
 	subQ->trackNum = sub.cdsc_trk;
 	subQ->trackIndex = sub.cdsc_ind;
-	subQ->trackM = itob(sub.cdsc_reladdr.msf.minute);
-	subQ->trackS = itob(sub.cdsc_reladdr.msf.second);
-	subQ->trackF = itob(sub.cdsc_reladdr.msf.frame);
-	subQ->discM = itob(sub.cdsc_absaddr.msf.minute);
-	subQ->discS = itob(sub.cdsc_absaddr.msf.second);
-	subQ->discF = itob(sub.cdsc_absaddr.msf.frame);
+	subQ->trackM = dec_to_bcd(sub.cdsc_reladdr.msf.minute);
+	subQ->trackS = dec_to_bcd(sub.cdsc_reladdr.msf.second);
+	subQ->trackF = dec_to_bcd(sub.cdsc_reladdr.msf.frame);
+	subQ->discM = dec_to_bcd(sub.cdsc_absaddr.msf.minute);
+	subQ->discS = dec_to_bcd(sub.cdsc_absaddr.msf.second);
+	subQ->discF = dec_to_bcd(sub.cdsc_absaddr.msf.frame);
 	return true;
 
 	#else
@@ -255,14 +255,8 @@ bool IOCtlSrc::ReadCDInfo()
 s32 IOCtlSrc::Seek(u32 sectorToSeek) const
 {
 #ifdef __linux__
-	u8 msf[4];
 	cdrom_msf cdMsf;
-	lsn_to_msf(msf, sectorToSeek);
-	//memcpy(&cdMsf, msf, 4);
-	cdMsf.cdmsf_min0 = btoi(msf[0]);
-	cdMsf.cdmsf_sec0 = btoi(msf[1]);
-	cdMsf.cdmsf_frame0 = btoi(msf[2]);
-	
+	lba_to_msf(sectorToSeek, &cdMsf.cdmsf_min0, &cdMsf.cdmsf_sec0, &cdMsf.cdmsf_frame0);
 	Console.WriteLn("M: %d", cdMsf.cdmsf_min0);
 	Console.WriteLn("S: %d", cdMsf.cdmsf_sec0);
 	Console.WriteLn("F: %d", cdMsf.cdmsf_frame0);

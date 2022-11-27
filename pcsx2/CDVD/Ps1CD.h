@@ -73,9 +73,8 @@ struct cdrStruct
 	cdvdTN ResultTN;
 	cdvdSubQ subQ;
 	u8 ResultTD[4];
-	u8 SetSector[4];
-	u8 SetSectorSeek[4];
-	s32 seekLsn;
+	u32 SetSector;
+	u32 SetSectorSeek;
 	u8 Track;
 	int Play;
 	int CurTrack;

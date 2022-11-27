@@ -91,20 +91,20 @@ cdvdSubQ* CALLBACK ISOreadSubQ(u32 lsn)
 		u8 min, sec, frm;
 		subq->ctrl = 4;
 		subq->mode = 1;
-		subq->trackNum = itob(1);
-		subq->trackIndex = itob(1);
+		subq->trackNum = dec_to_bcd(1);
+		subq->trackIndex = dec_to_bcd(1);
 
 		lba_to_msf(lsn, &min, &sec, &frm);
-		subq->trackM = itob(min);
-		subq->trackS = itob(sec);
-		subq->trackF = itob(frm);
+		subq->trackM = dec_to_bcd(min);
+		subq->trackS = dec_to_bcd(sec);
+		subq->trackF = dec_to_bcd(frm);
 
 		subq->pad = 0;
 
 		lba_to_msf(lsn + (2 * 75), &min, &sec, &frm);
-		subq->discM = itob(min);
-		subq->discS = itob(sec);
-		subq->discF = itob(frm);
+		subq->discM = dec_to_bcd(min);
+		subq->discS = dec_to_bcd(sec);
+		subq->discF = dec_to_bcd(frm);
 	}
 	return subq;
 }

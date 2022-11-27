@@ -54,6 +54,10 @@ static int diskTypeCached = -1;
 int lastReadSize;
 u32 lastLSN; // needed for block dumping
 
+std::vector<cdvdTrack> tracks;
+
+SectorInfo Cache[CacheSize];
+
 // Records last read block length for block dumping
 //static int plsn = 0;
 

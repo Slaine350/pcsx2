@@ -67,6 +67,11 @@ static __fi u8 dec_to_bcd(u8 dec)
 	return ((dec / 10) << 4) | (dec % 10);
 }
 
+static __fi u8 bcd_to_dec(u8 bcd)
+{
+	return ((bcd >> 4) * 10) + (bcd % 16);
+}
+
 static __fi void lsn_to_msf(u8* minute, u8* second, u8* frame, u32 lsn)
 {
 	*frame = dec_to_bcd(lsn % 75);
@@ -242,12 +247,12 @@ extern CDVD_API CDVDapi_NoDisc;
 #define CACHE_SIZE 12
 
 static const u32 CacheSize = 1U << CACHE_SIZE;
-static SectorInfo Cache[CacheSize];
+extern SectorInfo Cache[CacheSize];
 
 static std::mutex s_cache_lock;
 
 static int currentTrackNum = 1;
-static std::vector<cdvdTrack> tracks;
+extern std::vector<cdvdTrack> tracks;
 
 extern void CDVDsys_ChangeSource(CDVD_SourceType type);
 extern void CDVDsys_SetFile(CDVD_SourceType srctype, std::string newfile);

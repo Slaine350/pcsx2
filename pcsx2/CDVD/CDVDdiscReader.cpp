@@ -46,7 +46,7 @@ u8 directReadSectorBuffer[2448];
 // TocStuff
 void cdvdParseTOC()
 {
-	tracks[1].startLba = 0;
+	cdvdTrack* track;
 
 	if (!src->GetSectorCount())
 	{
@@ -58,7 +58,7 @@ void cdvdParseTOC()
 
 	if (src->GetMediaType() >= 0)
 	{
-		tracks[1].type = CDVD_MODE1_TRACK;
+		track->type = CDVD_MODE1_TRACK;
 
 		strack = 1;
 		etrack = 1;
@@ -70,29 +70,34 @@ void cdvdParseTOC()
 
 	for (auto& entry : src->ReadTOC())
 	{
+		track = new cdvdTrack();
 		if (entry.track < 1 || entry.track > 99)
 			continue;
 		strack = std::min(strack, entry.track);
 		etrack = std::max(etrack, entry.track);
-		tracks[entry.track].startLba = entry.lba;
+		track->startLba = entry.lba;
 		if ((entry.control & 0x0C) == 0x04)
 		{
 			std::array<u8, 2352> buffer;
 			// Byte 15 of a raw CD data sector determines the track mode
 			if (src->ReadSectors2352(entry.lba, 1, buffer.data()) && (buffer[15] & 3) == 2)
 			{
-				tracks[entry.track].type = CDVD_MODE2_TRACK;
+				track->type = CDVD_MODE2_TRACK;
+				track->readMode = CDVD_MODE_2352;
 			}
 			else
 			{
-				tracks[entry.track].type = CDVD_MODE1_TRACK;
+				track->type = CDVD_MODE1_TRACK;
+				track->readMode = CDVD_MODE_2048;
 			}
 		}
 		else
 		{
-			tracks[entry.track].type = CDVD_AUDIO_TRACK;
+			track->type = CDVD_AUDIO_TRACK;
+			track->readMode = CDVD_MODE_2352;
 		}
 		fprintf(stderr, "Track %u start sector: %u\n", entry.track, entry.lba);
+		tracks.push_back(*track);
 	}
 }
 
@@ -169,8 +174,6 @@ s32 CALLBACK DISCopen(const char* pTitle)
 	GetValidDrive(drive);
 	if (drive.empty())
 		return -1;
-
-	tracks.resize(100);
 
 	// open device file
 	try
